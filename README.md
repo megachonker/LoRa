@@ -10,7 +10,7 @@ Projet Tutoré
 *GPS.py* => permet d'obtenir les coordoné et des statistique sur le message recu
 - Rouge -> Pas de coordonnées ni de data
 - Bleu  -> Des coordonées mais pas de data
-- Jaune -> Pas de coordonnée mais des data
+- Jaune -> Pas de coordonnées mais des data
 - Vert  -> Des coordonnées et des data
 
 ## Sur le PC
