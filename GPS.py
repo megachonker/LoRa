@@ -13,7 +13,7 @@ l76 = L76GNSS(py, timeout=30)
 
 pycom.heartbeat(False)
 pycom.rgbled(0x7f0000) # red
-i==0
+
 with open('data.txt', 'a') as datafile:
     txt="\n\n\n"
     datafile.write(txt)
