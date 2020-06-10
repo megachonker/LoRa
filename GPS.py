@@ -14,6 +14,11 @@ l76 = L76GNSS(py, timeout=30)
 pycom.heartbeat(False)
 pycom.rgbled(0x7f0000) # red
 i==0
+with open('data.txt', 'a') as datafile:
+    txt="\n\n\n"
+    datafile.write(txt)
+datafile.close()
+
 while (True):
     s.setblocking(False)
     data = s.recv(64)
@@ -30,6 +35,10 @@ while (True):
 
     if coord != (None,None) and data != b'':
         pycom.rgbled(0x007f00)# vert   => + Coordoné ; + data 
-        
+
     txt=coord,lora.stats(),data
+    with open('data.txt', 'a') as datafile:
+        tx=str(txt)+"\n"
+        datafile.write(tx)
+    datafile.close()
     print(txt)
