@@ -1,8 +1,8 @@
 import machine
-from network import LoRa
+import pycom
 import socket
-import machine
 import time
+from network import LoRa
 from L76GNSS import L76GNSS
 from pytrack import Pytrack
 
@@ -11,10 +11,25 @@ s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 py = Pytrack()
 l76 = L76GNSS(py, timeout=30)
 
+pycom.heartbeat(False)
+pycom.rgbled(0x7f0000) # red
+i==0
 while (True):
     s.setblocking(False)
     data = s.recv(64)
-    time.sleep(1)
+    time.sleep(2)
     coord = l76.coordinates()
+    if coord == (None,None) and data == b'':
+        pycom.rgbled(0x7f0000) # rouge => - Coordoné ; - data 
+
+    if coord != (None,None) and data == b'':
+        pycom.rgbled(0x0000ff)# bleu   => + Coordoné ; - data 
+
+    if coord == (None,None) and data != b'':
+        pycom.rgbled(0xffff00)# jaune  => - Coordoné ; + data 
+
+    if coord != (None,None) and data != b'':
+        pycom.rgbled(0x007f00)# vert   => + Coordoné ; + data 
+        
     txt=coord,lora.stats(),data
     print(txt)
