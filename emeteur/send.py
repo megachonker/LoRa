@@ -5,38 +5,58 @@ import struct
 from struct import *
 import os
 
-buffersize=64
+buffersize=64 #taille  du  buffer  de récéption
 
-lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ,preamble=5, sf=8)
-s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
-s.settimeout(2)
-#i=0 #i permet d’identifier le numero de trame et donc les trame perdu
-f = open('img.py', 'rb')
-msg=b''
-nbtrame=(os.path.getsize('img.py')//buffersize-1)+1#nombre de  trame a envoyer
+lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ,preamble=5, sf=8)#définition dun truc
+s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
+f = open('img.py', 'rb')#on va ouvrire l'image qui port l'extention .py (pycom n'axepte pas  des fichier de format image)
 
-ntn=2# Next trame number
-tn=1 #tram number
-tl=64#trame lenght
+#définition d'une fonction d'aquitement
+def sendACK(var)
+	s.setblocking(False)
+	retour=s.recv(buffersize)
+	i=0
+	while len(retour)<0:
+		i+=1
+		print("essait d'envoit n° ",i)
+		s.send(var)
+		print("attente ack...")
+		retour=s.recv(buffersize)
+	print("ack Reçus")
+	return retour
 
-print('sending negosciation')
+#nbtrame=(os.path.getsize('img.py')//buffersize-1)+1#nombre de  trame a envoyer
 
+#initialisation de la map de donnée
+dataMap=[]
+for nbChunk in range((os.path.getsize('img.py')//buffersize-1)+1)
+	print("maping de du chunk n°",nbChunk)
+	dataMap.append(f.read(buffersize-1)))
+	print(dataMap[nbChunk])
+
+print("array contenant les data maper:")
+print(dataMap)
+
+###initialisation d'un tableaux qui va lister tout les chunk de data
+#indexToSend[0,1,2,3,4,5,6,7,8,9]
+for number in range(len(dataMap)):
+	indexToSend.append(number)
+print("initial index tableaux sending intialiser !")
+print(indexToSend)
 #send du nombre de trame
-s.send(nbtrame)#faire des rery avec des  ack
-if  s.recv(buffersize)==nbtrame:
+print("send demande de communiquation et annonce de ",nbtrame," trame a envoiller")
+print(sendACK(nbtrame))#faire des rery avec des  ack
+echo("sucès début de transmition")
 
-	echo("début de transmition")
 
-	for notrame in range(nbtrame):
-		trame=pack("B"+str(tl-1)+"s",notrame, f.read(buffersize-1))#on  concatène le no de trame est le numéro  de tram suivant + les  data
-		s.send(trame) # envoie du message
-		print("trame"+str(notrame)+"envoiller")
+for notrame in range(len(indexToSend)):
+	#on map la trame en  utilisant un octée pour anoncer le nombre de tram est ensuite 63 suivant pour les data
+	trame=pack("B"+str(tl-1)+"s",notrame, dataMap[indexToSend[notrame]])
+	#f.read(buffersize-1))#on  concatène le no de trame est le numéro  de tram suivant + les  data
+	s.send(trame) # envoie du message
+	print("trame n°"+str(notrame)+"envoiller")
+print("toute les trame on étée envoiler")
+print("envoit de trame de fin")
+missingTrame=sendACK("STOP")
 
-#Déclart l'arret en attente de réponse
-trame=s.recv(buffersize)
-while trame=='':
-    s.send("STOP")
-    trame=s.recv(buffersize)
-if trame==b'oKay':
-	print("start séquance de retrouvaille")
 print("sortie!")
