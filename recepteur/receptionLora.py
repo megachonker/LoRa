@@ -4,6 +4,8 @@ import time # pour la gestion des temps d'attente
 import os
 import struct
 from struct import *
+from operator import itemgetter#, attrgetter
+
 
 buffersize=64
 logtrames=[]
@@ -14,6 +16,14 @@ s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 s.setblocking(True)
 #s.settimeout(2)
 
+def unboxing(rawtram)
+    global indexRecieve indexManque
+    unpackted=unpack("B"+str(buffersize-1)+"s", rawtram)#on stoque la data qui est dans un  tuple dans une variable
+    indexRecieve.append(unpackted)
+    indexManque.remove(unpackted[0])
+    print(unpackted)
+
+
 #définition d'une fonction d'aquitement
 def sendACK(var):
 	s.setblocking(False)
@@ -21,6 +31,7 @@ def sendACK(var):
 	i=0
 	while len(retour)<0:
 		i+=1
+        #temps attente random ?
 		print("essait d'envoit n° ",i)
 		s.send(var)
 		print("attente ack...")
@@ -31,54 +42,51 @@ def sendACK(var):
 
 
 nbtrame=s.recv(buffersize)
-s.send("nombre de trame "+str(nbtrame))
-
+print("size data reçus")
 indexRecieve=[]
+indexManque=[]
+for number in range(nbtrame):
+	indexManque.append(number)
+
+print("envoit d'un  ackitement")
+
+#Unboxing de la premierre trame de donnée qui fait office d'ackitment
+unboxing(sendACK("nombre de trame "+str(nbtrame)))
+
+
 print("démarage reception")
 
-
-while True:#trame!="STOP"
-    s.send(nombretrames)
-    trame=s.recv(buffersize)
-    if trame=="STOP":
-        print("fin de flux reçus  !")
-        break
-    else:
-        unpackted=unpack("B"+str(buffersize-1)+"s", trame)#on stoque la data qui est dans un  tuple dans une variable
-        #if(indexRecieve.index(unpackted))
-        indexRecieve.append(unpackted)
-        print(unpackted)
-
-
-logtrames.append(trame)
-#for notrame in range(nbtrame-1):
-s.setblocking(True)
 while True:
-    trame=s.recv(buffersize)
-    if trame=b'STOP':
-        s.send('oKay')
-        break
-    logtrames.append(trame)
-
-unpack("B"+str(buffersize-1)+"s", trames)#on  concatène le no de trame est le numéro  de tram suivant + les  data
-
-
-data=b''
-compteur=0
-while True:
-    chunk=s.recv(128)
-    print(chunk[1])
-    if(len(chunk)>0):
-        compteur+=1
-        print(compteur)
-        if chunk==b'STOP':
+    while True:#trame!="STOP"
+        #s.send(nombretrames)
+        trame=s.recv(buffersize)
+        if trame=="STOP":
+            print("fin de flux reçus  !")
             break
-        data+=chunk
+        else:
+            unboxing(trame)
+    if(len(indexManque)==0):
+        print("plus de trame manquante.")
+        break
+
+    print("trame perdu/restant:")
+    print(indexManque)
+    #Envoit des trame a  retransmetre
+    #+ ajout de la premierre trame reçus (data)
+    unboxing(sendACK(indexManque))
+    print("début de la rerectption")
+
+
+print("récéption terminer:")
+print("trie:")
+indexRecieve.sort(key=itemgetter(0))
+print(indexRecieve)
+print("écriture en cour:")
 
 with open('imgOut.txt', 'w') as fout: #création de du fichier data.txt sur le module si il n'est pas present, ou sinon on l'ouvre en mode ajout de data.
-    fout.write(data) # 3 saut à la ligne pour diferentier les data precedentes
+    for truc in indexRecieve:
+        fout.write(truc[1]) # 3 saut à la ligne pour diferentier les data precedentes
+        print("chunk écrit:\n",str(truc[1]))
 fout.close() # on referme le fichier
 
-
-#fout.write(data)
 print("transfer  terminer")
