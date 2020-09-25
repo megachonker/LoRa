@@ -12,7 +12,7 @@ s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket rése
 f = open('img.py', 'rb')#on va ouvrire l'image qui port l'extention .py (pycom n'axepte pas  des fichier de format image)
 
 #définition d'une fonction d'aquitement
-def sendACK(var)
+def sendACK(var):
 	s.setblocking(False)
 	retour=s.recv(buffersize)
 	i=0
@@ -39,24 +39,31 @@ print(dataMap)
 
 ###initialisation d'un tableaux qui va lister tout les chunk de data
 #indexToSend[0,1,2,3,4,5,6,7,8,9]
+indexToSend=[]
 for number in range(len(dataMap)):
 	indexToSend.append(number)
 print("initial index tableaux sending intialiser !")
 print(indexToSend)
 #send du nombre de trame
 print("send demande de communiquation et annonce de ",nbtrame," trame a envoiller")
-print(sendACK(nbtrame))#faire des rery avec des  ack
+print(sendACK(len(dataMap)))#faire des rery avec des  ack
+
 echo("sucès début de transmition")
+while len(indexToSend)!=0:
+	for notrame in range(len(indexToSend)):
+		#on map la trame en  utilisant un octée pour anoncer le nombre de tram est ensuite 63 suivant pour les data
+		trame=pack("B"+str(tl-1)+"s",notrame, dataMap[indexToSend[notrame]])
+		#f.read(buffersize-1))#on  concatène le no de trame est le numéro  de tram suivant + les  data
+		s.send(trame) # envoie du message
+		print("trame n°"+str(notrame)+"envoiller")
+	print("toute les trame on étée envoiler")
+	print("envoit de trame de fin")
+	missingTrame=sendACK("STOP")
 
+	#reception des trame manquante
+	indexToSend=s.recv(buffersize)
+	print(type(indexToSend))
+	print("Début retransmition !")
 
-for notrame in range(len(indexToSend)):
-	#on map la trame en  utilisant un octée pour anoncer le nombre de tram est ensuite 63 suivant pour les data
-	trame=pack("B"+str(tl-1)+"s",notrame, dataMap[indexToSend[notrame]])
-	#f.read(buffersize-1))#on  concatène le no de trame est le numéro  de tram suivant + les  data
-	s.send(trame) # envoie du message
-	print("trame n°"+str(notrame)+"envoiller")
-print("toute les trame on étée envoiler")
-print("envoit de trame de fin")
-missingTrame=sendACK("STOP")
 
 print("sortie!")
