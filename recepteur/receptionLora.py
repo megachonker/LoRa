@@ -15,7 +15,15 @@ logtrames=[]
 lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ, preamble=5, sf=8)
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
-s.setblocking(True)
+def purge():
+	#purger les  sockete
+	s.setblocking(False)
+	purgetemp=s.recv(buffersize)
+	while purgetemp!=b'':
+		purgetemp=s.recv(buffersize)
+	s.setblocking(True)
+
+
 indexRecieve=[]
 indexManque=[]
 def unboxing(rawtram):
@@ -29,6 +37,7 @@ def unboxing(rawtram):
 
 #définition d'une fonction d'aquitement
 def sendACK(vara):
+	s.settimeout(2)
 	i=0
 	while True:
 		i+=1
@@ -40,11 +49,18 @@ def sendACK(vara):
 			break
 		except OSError as socket :
 			print("timeout try n° ",i)
+	s.setblocking(True)
 	return retour
 
-print("attente de tram size")
-nbtrame=int(s.recv(buffersize))
-s.settimeout(2)
+print("Attente Trame Datalenght")
+
+while True:
+	try:
+		nbtrame=unpack('H',s.recv(buffersize))[0]
+		break
+	except Exception as e:
+		print("Trame Non  attendue")
+
 print("size data reçus", str(nbtrame))
 
 #génération d'un  tableaux qui contien toute les trame
@@ -60,11 +76,13 @@ sendACK("nombre de trame "+str(nbtrame))
 
 print("démarage reception")
 
+
+s.setblocking(True)
 while True:
 	while True:#trame!="STOP"
 		#s.send(nombretrames)
 		trame=s.recv(buffersize)
-		if trame=="STOP":
+		if trame==b'STOP':
 			print("fin de flux reçus  !")
 			break
 		else:
