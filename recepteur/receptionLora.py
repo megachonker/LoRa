@@ -4,7 +4,9 @@ import time # pour la gestion des temps d'attente
 import os
 import struct
 from struct import *
-from operator import itemgetter#, attrgetter
+#lib manquante
+#import operator
+#from operator import itemgetter#, attrgetter
 
 
 buffersize=64
@@ -14,44 +16,46 @@ lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ, preambl
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
 s.setblocking(True)
-#s.settimeout(2)
-
-def unboxing(rawtram)
-	global indexRecieve indexManque
-	unpackted=unpack("B"+str(buffersize-1)+"s", rawtram)#on stoque la data qui est dans un  tuple dans une variable
+indexRecieve=[]
+indexManque=[]
+def unboxing(rawtram):
+	global indexRecieve
+	global indexManque
+	unpackted=unpack("H"+str(buffersize-2)+"s", rawtram)#on stoque la data qui est dans un  tuple dans une variable
 	indexRecieve.append(unpackted)
 	indexManque.remove(unpackted[0])
-	print(unpackted)
+	print(unpackted[0])
 
 
 #définition d'une fonction d'aquitement
-def sendACK(var):
-	s.setblocking(False)
-	retour=s.recv(buffersize)
+def sendACK(vara):
 	i=0
-	while len(retour)<0:
+	while True:
 		i+=1
-		#temps attente random ?
-		print("essait d'envoit n° ",i)
-		s.send(var)
+		s.send(str(vara))
 		print("attente ack...")
-		retour=s.recv(buffersize)
-	print("ack Reçus")
-	s.setblocking(True)
+		try:
+			retour=s.recv(buffersize)
+			print("ack Reçus")
+			break
+		except OSError as socket :
+			print("timeout try n° ",i)
 	return retour
 
+print("attente de tram size")
+nbtrame=int(s.recv(buffersize))
+s.settimeout(2)
+print("size data reçus", str(nbtrame))
 
-nbtrame=s.recv(buffersize)
-print("size data reçus")
-indexRecieve=[]
-indexManque=[]
-for number in range(nbtrame):
+#génération d'un  tableaux qui contien toute les trame
+for number in range(int(nbtrame)):
 	indexManque.append(number)
 
 print("envoit d'un  ackitement")
 
 #Unboxing de la premierre trame de donnée qui fait office d'ackitment
-unboxing(sendACK("nombre de trame "+str(nbtrame)))
+sendACK("nombre de trame "+str(nbtrame))
+#unboxing()
 
 
 print("démarage reception")
@@ -68,7 +72,7 @@ while True:
 	if(len(indexManque)==0):
 		print("plus de trame manquante.")
 		break
-	 print("trame perdu/restant:")
+	print("trame perdu/restant:")
 	print(indexManque)
 	#Envoit des trame a  retransmetre
 	#+ ajout de la premierre trame reçus (data)
@@ -78,7 +82,7 @@ while True:
 
 print("récéption terminer:")
 print("trie:")
-indexRecieve.sort(key=itemgetter(0))
+indexRecieve.sort(key=itemgetter(0))#sor besoin lib ?
 print(indexRecieve)
 print("écriture en cour:")
 
