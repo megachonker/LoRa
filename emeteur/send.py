@@ -5,7 +5,6 @@ import struct
 from struct import *
 import os
 
-import ctypes
 
 buffersize=64 #taille  du  buffer  de récéption
 
@@ -75,7 +74,7 @@ print(indexToSend)
 print("send demande de communiquation et annonce de ",str(len(dataMap))," trame a envoiller")
 
 #on  verrifie que la valeur envoilkler est bien la  valleur recus
-if (int(sendACK(pack('H',len(dataMap))))==len(dataMap)):
+if (int(sendACK(pack('H3s',len(dataMap),b'OwO')))==len(dataMap)):
 	print("Nombre de trame OK")
 else:
 	print("erreur de trame")
@@ -86,8 +85,8 @@ while len(indexToSend)!=0:
 		#on map la trame en  utilisant un octée pour anoncer le nombre de tram est ensuite 63 suivant pour les data
 		trame=pack("H"+str(buffersize-2)+"s",notrame, dataMap[indexToSend[notrame]])#buffersize = tl ?
 		#f.read(buffersize-1))#on  concatène le no de trame est le numéro  de tram suivant + les  data
-		s.send(indexToSend[notrame]) #on envoit avec le chunk de data sa position dans l'index des donnée
-		print("trame numero: "+str(notrame)+" index data: "+indexToSend[notrame])
+		s.send(str(indexToSend[notrame])) #on envoit avec le chunk de data sa position dans l'index des donnée
+		print("trame numero: "+str(notrame)+" index data: "+ str(indexToSend[notrame]))
 	print("envoit de trame de fin")
 	missingTrame=sendACK("STOP")
 	#on va optimiser la bande passante en transformant la liste en  suite de chifre
@@ -98,7 +97,7 @@ while len(indexToSend)!=0:
 	indexToSend=[]
 	while True:
 		temp=s.recv(buffersize)
-		if temp="STOP":
+		if temp=="STOP":
 			sendACK("indexFIN")
 			break
 		#on va déduire le nombre de valeur a insere dans le tableaux par la longeur /2 car  coder sur 2 bite
