@@ -5,6 +5,8 @@ import struct
 from struct import *
 import os
 
+import ctypes
+
 buffersize=64 #taille  du  buffer  de récéption
 
 lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ,preamble=5, sf=8)#définition dun truc
@@ -12,12 +14,31 @@ s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket rése
 f = open('img.py', 'rb')#on va ouvrire l'image qui port l'extention .py (pycom n'axepte pas  des fichier de format image)
 s.setblocking(True)
 s.settimeout(2)
+
+indexToSend=[]
+def addToArray(data):
+	global indexToSend
+	for i in range(struc.unpack('H',data))
+	indexToSend
+
+
+
+def purge():
+	#purger les  sockete
+	s.setblocking(False)
+	purgetemp=s.recv(buffersize)
+	while purgetemp!=b'':
+		purgetemp=s.recv(buffersize)
+	s.setblocking(True)
+
+
+
 #définition d'une fonction d'aquitement
 def sendACK(vara):
 	i=0
 	while True:
 		i+=1
-		s.send(str(vara))
+		s.send(vara)#LA ?
 		print("attente ack...")
 		try:
 			retour=s.recv(buffersize)
@@ -54,12 +75,17 @@ while var!=b'':
 indexToSend=[]
 for number in range(len(dataMap)):
 	indexToSend.append(number)
-print("initial index tableaux sending intialiser !")
+print("tableaux d'envoit:")
 print(indexToSend)
+
 #send du nombre de trame
 print("send demande de communiquation et annonce de ",str(len(dataMap))," trame a envoiller")
 
-print(sendACK(len(dataMap)))#faire des rery avec des  ack
+#on  verrifie que la valeur envoilkler est bien la  valleur recus
+if (int(sendACK(pack('H',len(dataMap))))==len(dataMap)):
+	print("Nombre de trame OK")
+else:
+	print("erreur de trame")
 
 print("sucès début de transmition")
 while len(indexToSend)!=0:
@@ -68,13 +94,29 @@ while len(indexToSend)!=0:
 		trame=pack("H"+str(buffersize-2)+"s",notrame, dataMap[indexToSend[notrame]])#buffersize = tl ?
 		#f.read(buffersize-1))#on  concatène le no de trame est le numéro  de tram suivant + les  data
 		s.send(trame) # envoie du message
-		print("trame n°"+str(notrame))
-	print("toute les trame on étée envoiler")
+		print("trame numero: "+str(notrame))
 	print("envoit de trame de fin")
 	missingTrame=sendACK("STOP")
+	#on va optimiser la bande passante en transformant la liste en  suite de chifre
+
+	#divise par 2  le  buffer car on  a  des short de  2  octée
 
 	#reception des trame manquante
-	indexToSend=s.recv(buffersize)
+
+	#on va attendre j'usquasqu'on recoive un struc
+
+	indexToSend=''
+	while True:
+		temp=s.recv(buffersize)
+		if temp="STOP":
+			sendACK("indexFIN")
+			break
+		indexToSend+=s.recv(buffersize)
+		sendACK("indexOK")
+
+
+
+
 	print(type(indexToSend))
 	print("Début retransmition !")
 
