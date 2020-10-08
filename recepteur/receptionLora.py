@@ -9,6 +9,7 @@ from struct import *
 #from operator import itemgetter#, attrgetter
 
 
+
 buffersize=64
 logtrames=[]
 
@@ -52,8 +53,19 @@ def sendACK(vara):
 	s.setblocking(True)
 	return retour
 
-print("Attente Trame Datalenght")
+def sendACKvrf(data, match):
+	while True:
+		if sendACK(data) == match :
+			break
+		else:
+			print("Réponse inatentue/Malformed")
+	return True
 
+
+print("Attente Trame Datalenght")
+#purge le buffer au  cas ou
+purge()
+#pour définire nbtrame  on va  accepter que les  trame  étant sur 1 octée en Long
 while True:
 	try:
 		nbtrame=unpack('H',s.recv(buffersize))[0]
@@ -70,8 +82,8 @@ for number in range(int(nbtrame)):
 print("envoit d'un  ackitement")
 
 #Unboxing de la premierre trame de donnée qui fait office d'ackitment
-sendACK("nombre de trame "+str(nbtrame))
-#unboxing()
+unboxing(sendACK(str(nbtrame)))
+
 
 
 print("démarage reception")
@@ -94,7 +106,23 @@ while True:
 	print(indexManque)
 	#Envoit des trame a  retransmetre
 	#+ ajout de la premierre trame reçus (data)
-	unboxing(sendACK(indexManque))
+
+	while len(indexManque):
+		i=0
+		temp=b''
+		while i<32 && len(indexManque):
+			temp+=pack('H',indexManque[0])
+			indexManque.pop(0)
+			i+=1
+		temp=struct.pack('H',i)+temp
+		sendACKvrf(temp,"indexOK")#a la place de indexOk peut metre un ckecksum
+	sendACKvrf(temp,"indexFIN")
+
+
+
+	unboxing(sendACK()
+
+
 	print("début de la rerectption")
 
 
