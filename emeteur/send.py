@@ -8,11 +8,11 @@ import os
 
 buffersize=64 #taille  du  buffer  de récéption
 
-lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ,preamble=5, sf=8)#définition dun truc
+lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ,preamble=5, sf=10)#définition dun truc
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
 f = open('img.py', 'rb')#on va ouvrire l'image qui port l'extention .py (pycom n'axepte pas  des fichier de format image)
-s.setblocking(True)
-s.settimeout(2)
+s.setblocking(True)#on dit que l'écoute ou l'envoit bloque le socket
+s.settimeout(2) #temps  a attendre avant de  considérer une trame  comme perdu
 
 
 def purge():
@@ -73,7 +73,14 @@ print(indexToSend)
 #send du nombre de trame
 print("send demande de communiquation et annonce de ",str(len(dataMap))," trame a envoiller")
 
+#on va  utiliser le smiller OwO  pour  taguer qu'on est bien  sur  une  trame qui  annonce la  longeur
 #on  verrifie que la valeur envoilkler est bien la  valleur recus
+
+##temporaire ?
+purge()
+s.settimeout(2)
+
+
 if (int(sendACK(pack('H3s',len(dataMap),b'OwO')))==len(dataMap)):
 	print("Nombre de trame OK")
 else:
@@ -81,29 +88,42 @@ else:
 
 print("sucès début de transmition")
 while len(indexToSend)!=0:
+	chargement=len(indexToSend)
 	for notrame in range(len(indexToSend)):
 		#on map la trame en  utilisant un octée pour anoncer le nombre de tram est ensuite 63 suivant pour les data
-		trame=pack("H"+str(buffersize-2)+"s",notrame, dataMap[indexToSend[notrame]])#buffersize = tl ?
-		#f.read(buffersize-1))#on  concatène le no de trame est le numéro  de tram suivant + les  data
-		s.send(str(indexToSend[notrame])) #on envoit avec le chunk de data sa position dans l'index des donnée
-		print("trame numero: "+str(notrame)+" index data: "+ str(indexToSend[notrame]))
-	print("envoit de trame de fin")
+		trame=pack("H"+str(buffersize-2)+"s",indexToSend[notrame], dataMap[indexToSend[notrame]])#buffersize = tl ?
+		#j'envoit ma  trame
+		s.send(trame)
+		print("envoit trame num: "+str(notrame)+"/"+str(chargement)+" index data: "+ str(indexToSend[notrame]),"string pur",dataMap[indexToSend[notrame]])
+
+	#truc a  dégager  #FAire refleciton     doit servier a
 	missingTrame=sendACK("STOP")
 	#on va optimiser la bande passante en transformant la liste en  suite de chifre
 
 	#divise par 2  le  buffer car on  a  des short de  2  octée
 
 	#reception des trame manquante
+	print("detection des trame manquante")
 	indexToSend=[]
 	while True:
+		#on indique que  l'on écoute sagement
+		s.setblocking(True)
+		#on enleve le time  out
+		s.settimeout(None)
+		#on attend une trame
 		temp=s.recv(buffersize)
-		if temp=="STOP":
+		s.settimeout(1)###########  ??
+		print("mssage des message",temp)########  ?
+		if (temp == b'STOP'):
+			print("attente destinataire ok....")
 			sendACK("indexFIN")
 			break
 		#on va déduire le nombre de valeur a insere dans le tableaux par la longeur /2 car  coder sur 2 bite
-		for i in range(struct.calcsize(data)/2):
-			indexToSend.append(struct.unpack('H',data)[i])
-			sendACK("indexOKforNext")
+		nbcase=int(len(temp)/2)
+		for i in range(nbcase):##on déduit le nombre de numero en  fonction de la  size de  trame  attention si malformer !
+			indexToSend.append(struct.unpack(str(nbcase)+'H',temp)[i])#  I n'a  pas a être la et on e st  sensermodifier les h
+		print("envoit confirmation reception")
+		sendACK("indexOKforNext")
 	print("toute numero de  chunck a renvoiller recus:")
 	print(indexToSend)
 
