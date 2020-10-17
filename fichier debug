@@ -1,0 +1,13 @@
+#!/bin/bash
+for u in $(seq 0 10)
+do
+for number in $(seq 0 9)
+do
+chunk=$number
+        for i in  $(seq 2 62);
+        do
+                chunk=$chunk$number
+        done
+        echo -n $chunk
+done
+done
