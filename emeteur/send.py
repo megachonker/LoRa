@@ -8,7 +8,7 @@ import os
 
 buffersize=64 #taille  du  buffer  de récéption
 
-lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ,preamble=5, sf=10)#définition dun truc
+lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ,preamble=5, sf=8)#définition dun truc
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
 f = open('img.py', 'rb')#on va ouvrire l'image qui port l'extention .py (pycom n'axepte pas  des fichier de format image)
 s.setblocking(True)#on dit que l'écoute ou l'envoit bloque le socket
@@ -54,8 +54,10 @@ def sendACK(vara):
 dataMap=[]
 f = open('img.py', 'rb')
 var=b'e'
-while var!=b'':
-	var=f.read(buffersize-1)
+while True:
+	var=f.read(buffersize-2)
+	if (var==b''):
+		break
 	dataMap.append(var)
 
 
