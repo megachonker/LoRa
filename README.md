@@ -11,7 +11,7 @@ voire  l'impacte de la  distance est des  différante modulation  sure ce débit
 - Envoit de binaire hover Lora ✔
 - Detection des trame perdu ✔ (avec le minimum de bande passante)
 - Retransmition trame perdu ✔
-- Intégritée de la playload Recepteur ✘
+- Intégritée de la playload Recepteur ✔
 - Portage sur librairie ✘ (pour les benchmark) 
 - Couche Verification/Correction Erreur ? (intégrée dans la pile lora)
 
