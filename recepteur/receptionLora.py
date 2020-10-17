@@ -13,7 +13,7 @@ from operator import itemgetter#, attrgetter
 buffersize=64
 
 #on initialise lora Avec des parametre qu'on va vouloire jouer
-lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ, preamble=5, sf=10)
+lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ, preamble=5, sf=8)
 #on initialise le  soket
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
