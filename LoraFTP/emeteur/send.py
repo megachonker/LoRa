@@ -40,16 +40,7 @@ def sendACK(vara):
 			print("timeout try n° ",i)
 	return retour
 
-#nbtrame=(os.path.getsize('img.py')//buffersize-1)+1#nombre de  trame a envoyer
-
 #initialisation de la map de donnée
-
-# totalChunk=(os.stat('img.py')[0]//(buffersize-1))+1
-# for nbChunk in range(totalChunk):
-# 	print("maping de du chunk n°",nbChunk)
-# 	dataMap.append(f.read(buffersize-32))
-# 	print(dataMap[nbChunk])
-
 
 dataMap=[]
 f = open('img.py', 'rb')
