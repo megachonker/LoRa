@@ -17,6 +17,13 @@ lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ, preambl
 #on initialise le  soket
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
+def crono():
+	global ltime
+	b=time.time()
+	out=b-ltime
+	ltime=b
+	return out
+
 
 #fonction  permetant de vider  le buffer  qui peut poser  des soucis RArement mais  ça peut vite  être contrégniant dans le cas échéant
 def purge():
@@ -43,12 +50,14 @@ def unboxing(rawtram):
 	unpackted=unpack("H"+str(buffersize-2)+"s", rawtram)#on stoque la data qui est dans un  tuple dans une variable
 	if(unpackted[0]<nbtrame):
 		#print("trame depacked", unpackted)
-		print("del val",unpackted[0],"/",str(nbtrame))#,"erreur estimer",str(len(indexRecieve)-compteurerr))
+		print("del val",unpackted[0],"débit: ",str(crono()/60*62),"octée/s")#"/",str(nbtrame))#,"erreur estimer",str(len(indexRecieve)-compteurerr))
 		#on
 		indexRecieve.append(unpackted) #on archive le packet recus
 		#print("indexremovebefort ",str(indexManque))
 		indexManque.remove(unpackted[0])
 		#print("indexremove after ",str(indexManque))
+
+		#lora.stats()
 
 	else:
 		print("malformer", unpackted)
@@ -108,7 +117,7 @@ unboxing(sendACK(str(nbtrame)))
 
 
 print("démarage reception")
-
+startAt=time.time()
 #je  demande explicitement d'écouter j'usqua se que je  recois une trame
 s.setblocking(True)
 #tant qu'il  y a des trame  manquante
@@ -116,7 +125,7 @@ while True:
 	#tant que l'éméteur veux envoiller des donnée
 	while True:
 		#je  reçois ma trame
-		trame=s.recv(buffersize)
+		#trame=s.recv(buffersize)
 		#quand l'éméteur  a fini ENvoit de  stop pour  passer a la partie suivante
 		if trame==b'STOP':
 			print("fin de flux reçus  !")
@@ -176,6 +185,9 @@ while True:
 
 
 print("récéption terminer:")
+stopAt=time.time()
+print("durée du transfer:",str(stopAt-startAt))
+
 print("trie:")
 #on va trier  en fonction  du  1er élémenet du tuple du tableaux
 indexRecieve.sort(key=itemgetter(0))
