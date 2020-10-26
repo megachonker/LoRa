@@ -13,7 +13,7 @@ voire  l'impacte de la  distance est des  différante modulation  sure ce débit
 - Retransmition trame perdu ✔
 - Intégritée de la playload Recepteur ✔
 - Portage sur librairie ✘ (pour les benchmark) 
-- Couche Verification/Correction Erreur ? (intégrée dans la pile lora)
+- Verification d'intégritée ✔ 
 
 ## Objectif future
 ### Benchmark et Mesure
