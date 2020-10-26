@@ -12,7 +12,6 @@ import hashlib
 
 #on set la taille  du buffer ces a dire le  nombre  d'octée qu'on attend  pour fermer  le socket
 buffersize=64
-playloadsize=62 #buffersize - 2 because 2 is a integer of   the len of  no trame
 #on initialise lora Avec des parametre qu'on va vouloire jouer
 lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_500KHZ, preamble=5, sf=7)
 #on initialise le  soket
@@ -42,33 +41,35 @@ startAt=0
 nbtrame=0
 indexManque=[]
 indexRecieve=[]
+stVarIndex=""
+tVarIndex=""
+playloadsize=0 #autodetect
+
 
 def unboxing(rawtram):
 	#on  autorise  la définition a avoire accèse au  meme variable que le main
 	global indexRecieve
 	global indexManque
 	global startAt
-	#chercher si la trame a unboxer est malformer
-		#faire fonction qui check  la trame
 
 	#on verifie si on peut umpack la trame
-	try:
-		unpackted=unpack("H"+str(buffersize-2)+"s", rawtram)#on stoque la data qui est dans un  tuple dans une variable
-		#on vérifie si ces bien une trame  de data
+	try:			#"H"+str(buffersize-2)
+		unpackted=unpack(stVarIndex+"s", rawtram)#on stoque la data qui est dans un  tuple dans une variable
 
-		#print("trame depacked", unpackted)
-
+		#pour le premier tour  on empege une division par zero
 		totaltemp=time.time()-startAt
 		if totaltemp == 0:
 			totaltemp=1
-		totaldata=(len(indexRecieve)+1)*playloadsize
+		totaldata=(len(indexRecieve)+1)*int(playloadsize)
 
 		print("del val",unpackted[0],"débit moyen: ",str(totaldata/totaltemp),"octée/s")
 
+		#on vérifie si ces bien une trame  de data
 		try:
 			indexManque.remove(unpackted[0])
 			indexRecieve.append(unpackted) #on archive le packet recus
 		except ValueError:
+			#debug value
 			print("List des  packet a receptioner ",str(indexManque))
 			print("liste des packet déja  receptioner", str(indexRecieve))
 			print("valeur a  supprimer(1er):",unpackted)
@@ -130,15 +131,13 @@ def writeTo(name):
 	fout.close()
 
 
-
-
 print("Attente Trame Datalenght")
 #purge le buffer au  cas ou
 purge()
 #pour définire nbtrame  on va  accepter que les  trame  étant sur 1 octée en Long
 while True:
 	try:
-		nbtrame=unpack('H3s32s',s.recv(buffersize))
+		nbtrame=unpack('L3s32s',s.recv(buffersize))
 		if nbtrame[1]==b'OwO':
 			checksum=nbtrame[2]
 			nbtrame=nbtrame[0]
@@ -147,6 +146,23 @@ while True:
 		print("nombretrame err : Trame Non  attendue",str(nbtrame))
 
 print("nombre de trame", str(nbtrame))
+
+
+#on déduit le type de  variable a  utiliser en fonction du  nombre de trame total
+if nbtrame<256:
+	tVarIndex="B"
+	stVarIndex="B"+str(buffersize-1)
+	playloadsize=str(buffersize-1)
+elif (nbtrame<65536):
+	tVarIndex="H"
+	stVarIndex="H"+str(buffersize-2)
+	playloadsize=str(buffersize-1)
+else:
+	tVarIndex="L"
+	stVarIndex="L"+str(buffersize-4)
+	playloadsize=str(buffersize-1)
+
+
 #génération d'un  tableaux qui contien toute les trame
 for number in range(int(nbtrame)):
 	indexManque.append(number)
@@ -255,10 +271,7 @@ print("Phase écriture:")
 
 writeTo("imgOut.txt")
 
-
-
 # print("durée du transfer:",str(stopAt-startAt),"débit moyen de", str(os.stat("imgOut.txt")[5]/(stopAt-startAt)))
-
 
 print("transfer  terminer")
 purge()
