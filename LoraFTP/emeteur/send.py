@@ -15,8 +15,8 @@ s.setblocking(True)#on dit que l'écoute ou l'envoit bloque le socket
 s.settimeout(2) #temps  a attendre avant de  considérer une trame  comme perdu
 
 
+#purger les  sockete
 def purge():
-	#purger les  sockete
 	s.setblocking(False)
 	purgetemp=s.recv(buffersize)
 	while purgetemp!=b'':
@@ -41,49 +41,73 @@ def sendACK(vara):
 	return retour
 
 #initialisation de la map de donnée
-
 dataMap=[]
 f = open('img.py', 'rb')
-azer=var=b''
+stringToHash=var=b''
+sizefile=os.stat('img.py')[6]
+
+#on déduit le type de  variable a  utiliser en fonction du  nombre de trame total
+if sizefile/(buffersize-1)<256:
+	tVarIndex="B" #a  enlever qqd ça marhce
+	stVarIndex="B"+str(buffersize-1)
+	sVarIndex=1
+elif sizefile/(buffersize-2) < 65536:
+	tVarIndex="H"
+	stVarIndex="H"+str(buffersize-2)
+	sVarIndex=2
+else:
+	tVarIndex="L"
+	stVarIndex="L"+str(buffersize-4)
+	sVarIndex=4
+
+lenDatamap=os.stat('img.py')[6]//(buffersize-1)+1
+
+
+#on génère notre dataMap
 while True:
-	var=f.read(buffersize-2)
+	var=f.read(buffersize-sVarIndex)
 	if (var==b''):
 		break
 
 	#pour que la fin  du fichier soit fill avec des 0 pour un checksum correct
-	ajouter=(buffersize-2)-len(var)
+	ajouter=(buffersize-sVarIndex)-len(var)
 	if ajouter!=0:
 		var+=ajouter*b'\x00'
+
 	dataMap.append(var)
-	azer+=var
+	stringToHash+=var
+
+if (len(dataMap)!=lenDatamap):
+	print("Erreur  taille  datamap")
+	print("len(dataMap)",str(len(dataMap)))
+	print("lenDatamap",str(lenDatamap))
+
 
 #on va  hasher  datamap
 m = hashlib.sha256()
-m.update(azer)
+m.update(stringToHash)
+
+
 
 # print("array contenant les data maper:")
-# print(dataMap)
 
 ###initialisation d'un tableaux qui va lister tout les chunk de data
 #indexToSend[0,1,2,3,4,5,6,7,8,9]
 indexToSend=[]
-for number in range(len(dataMap)):
+for number in range(lenDatamap):
 	indexToSend.append(number)
-print("tableaux d'envoit:")
-print(indexToSend)
 
 #send du nombre de trame
-print("send demande de communiquation et annonce de ",str(len(dataMap))," trame a envoiller")
+print("send demande de communiquation et annonce de ",str(lenDatamap)," trame a envoiller")
 
 #on va  utiliser le smiller OwO  pour  taguer qu'on est bien  sur  une  trame qui  annonce la  longeur
 #on  verrifie que la valeur envoilkler est bien la  valleur recus
 
-##temporaire ?
-purge()
+purge() ##verifier si utile ?
 s.settimeout(2)
 
-
-if (int(sendACK(pack('H3s32s',len(dataMap),b'OwO',m.digest())))==len(dataMap)):
+			##pack('H3s32s'
+if (int(sendACK(pack('L3s32s',lenDatamap,b'OwO',m.digest())))==lenDatamap):
 	print("Nombre de trame OK")
 else:
 	print("erreur de trame")
@@ -93,16 +117,14 @@ while len(indexToSend)!=0:
 	chargement=len(indexToSend)
 	for notrame in range(len(indexToSend)):
 		#on map la trame en  utilisant un octée pour anoncer le nombre de tram est ensuite 63 suivant pour les data
-		trame=pack("H"+str(buffersize-2)+"s",indexToSend[notrame], dataMap[indexToSend[notrame]])#buffersize = tl ?
+					#"H"+str(buffersize-2)
+		trame=pack(stVarIndex+"s",indexToSend[notrame], dataMap[indexToSend[notrame]])#buffersize = tl ?
 		#j'envoit ma  trame
 		s.send(trame)
 		print("envoit trame num: "+str(notrame)+"/"+str(chargement)+" index data: "+ str(indexToSend[notrame]))#,"string pur",dataMap[indexToSend[notrame]])
 
-	#truc a  dégager  #FAire refleciton     doit servier a
+	#marque la fint d'une transmition
 	missingTrame=sendACK("STOP")
-	#on va optimiser la bande passante en transformant la liste en  suite de chifre
-
-	#divise par 2  le  buffer car on  a  des short de  2  octée
 
 	#reception des trame manquante
 	print("detection des trame manquante")
@@ -115,7 +137,7 @@ while len(indexToSend)!=0:
 		#on attend une trame
 		temp=s.recv(buffersize)
 		s.settimeout(0.1)###########  Besoin de désincroniser pour que A ecoute et B parle
-		#print("mssage des message",temp)########  ?
+		#print("mssage des message",temp)# # DEBUGage
 		if (temp == b'STOP'):
 			print("attente destinataire ok....")
 			sendACK("indexFIN")
