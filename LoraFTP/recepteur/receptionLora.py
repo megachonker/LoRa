@@ -8,22 +8,24 @@ from struct import * ##verifier si ces utile
 #librérie  ou j'ai  du  retirer des  fonction  de  python  3.7 pour l'adapter sur lopy 2.7
 #de ce fait  je pourait la simplifier  au stricte minimum donc a voir  .....
 from operator import itemgetter#, attrgetter
+import hashlib
 
 #on set la taille  du buffer ces a dire le  nombre  d'octée qu'on attend  pour fermer  le socket
 buffersize=64
-
+playloadsize=62 #buffersize - 2 because 2 is a integer of   the len of  no trame
 #on initialise lora Avec des parametre qu'on va vouloire jouer
-lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ, preamble=5, sf=8)
+lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_500KHZ, preamble=5, sf=7)
 #on initialise le  soket
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
-def crono():
-	global ltime
-	b=time.time()
-	out=b-ltime
-	ltime=b
-	return out
-
+##ne pouvant avoir une résolution en  dessou de  la  seconde  sans passer  par des  tick ces mort
+# ltime=int()
+# def crono():
+# 	global ltime
+# 	b=time.time()
+# 	out=b-ltime
+# 	ltime=b
+# 	return out
 
 #fonction  permetant de vider  le buffer  qui peut poser  des soucis RArement mais  ça peut vite  être contrégniant dans le cas échéant
 def purge():
@@ -34,33 +36,49 @@ def purge():
 		purgetemp=s.recv(buffersize)
 	s.setblocking(True)
 
-#on  initialise  les tableaux pour  que les définition  puisse correctement les  utilisé
-indexRecieve=[]
-indexManque=[]
-compteurerr=0
+
 #declaration
+startAt=0
 nbtrame=0
+indexManque=[]
+indexRecieve=[]
+
 def unboxing(rawtram):
 	#on  autorise  la définition a avoire accèse au  meme variable que le main
 	global indexRecieve
 	global indexManque
-	global compteurerr
+	global startAt
 	#chercher si la trame a unboxer est malformer
 		#faire fonction qui check  la trame
-	unpackted=unpack("H"+str(buffersize-2)+"s", rawtram)#on stoque la data qui est dans un  tuple dans une variable
-	if(unpackted[0]<nbtrame):
+
+	#on verifie si on peut umpack la trame
+	try:
+		unpackted=unpack("H"+str(buffersize-2)+"s", rawtram)#on stoque la data qui est dans un  tuple dans une variable
+		#on vérifie si ces bien une trame  de data
+
 		#print("trame depacked", unpackted)
-		print("del val",unpackted[0],"débit: ",str(crono()/60*62),"octée/s")#"/",str(nbtrame))#,"erreur estimer",str(len(indexRecieve)-compteurerr))
-		#on
-		indexRecieve.append(unpackted) #on archive le packet recus
-		#print("indexremovebefort ",str(indexManque))
-		indexManque.remove(unpackted[0])
-		#print("indexremove after ",str(indexManque))
+
+		totaltemp=time.time()-startAt
+		if totaltemp == 0:
+			totaltemp=1
+		totaldata=(len(indexRecieve)+1)*playloadsize
+
+		print("del val",unpackted[0],"débit moyen: ",str(totaldata/totaltemp),"octée/s")
+
+		try:
+			indexManque.remove(unpackted[0])
+			indexRecieve.append(unpackted) #on archive le packet recus
+		except ValueError:
+			print("List des  packet a receptioner ",str(indexManque))
+			print("liste des packet déja  receptioner", str(indexRecieve))
+			print("valeur a  supprimer(1er):",unpackted)
+			print("packet unpackted", str(unpackted))
+			print("raw packet", str(rawtram))
 
 		#lora.stats()
 
-	else:
-		print("malformer", unpackted)
+	except OSError as e:
+		print("size  du  packet", str(len(unpackted)),"contenus: ", str(rawtram))
 
 
 #définition d'une fonction d'aquitement
@@ -90,6 +108,29 @@ def sendACKvrf(data, match):
 			print("Réponse inatentue/Malformed", str(sendACK(data)))
 	return True
 
+def writeTo(name):
+	global indexRecieve
+	#on essay suprime le fichier si il existe
+	#flmee de  chercherune fonction  de  test  si  le fichier existe avant  de le suprimer
+	name=str(name)
+	try:
+		#on  essaye  de le supprimer
+		os.remove(name)
+		print("fichier supprimer")
+	except OSError as e:
+		print("fichier inéxistant")
+
+	#on  va  ouvrire  le fichiuer
+	with open(name, 'w') as fout: #création de du fichier data.txt sur le module si il n'est pas present, ou sinon on l'ouvre en mode ajout de data.
+		#on va  parser notre  tableaux de  tuple
+		for truc in indexRecieve:
+			#on  va selecioner  la  2eme valeur de  notre tuple  (les data)
+			fout.write(truc[1])
+			# on referme le fichier proprement
+	fout.close()
+
+
+
 
 print("Attente Trame Datalenght")
 #purge le buffer au  cas ou
@@ -97,12 +138,13 @@ purge()
 #pour définire nbtrame  on va  accepter que les  trame  étant sur 1 octée en Long
 while True:
 	try:
-		nbtrame=unpack('H3s',s.recv(buffersize))
+		nbtrame=unpack('H3s32s',s.recv(buffersize))
 		if nbtrame[1]==b'OwO':
+			checksum=nbtrame[2]
 			nbtrame=nbtrame[0]
 			break
 	except Exception as e:
-		print("Trame Non  attendue")
+		print("nombretrame err : Trame Non  attendue",str(nbtrame))
 
 print("nombre de trame", str(nbtrame))
 #génération d'un  tableaux qui contien toute les trame
@@ -113,6 +155,7 @@ for number in range(int(nbtrame)):
 print("envoit d'un  ackitement")
 #Unboxing de la premierre trame de donnée qui fait office d'ackitment
 purge()
+startAt=time.time()
 unboxing(sendACK(str(nbtrame)))
 
 
@@ -125,10 +168,11 @@ while True:
 	#tant que l'éméteur veux envoiller des donnée
 	while True:
 		#je  reçois ma trame
-		#trame=s.recv(buffersize)
+		trame=s.recv(buffersize)
 		#quand l'éméteur  a fini ENvoit de  stop pour  passer a la partie suivante
 		if trame==b'STOP':
 			print("fin de flux reçus  !")
+			s.send("Ok")
 			break
 		#sinon on traite la trame normalement
 		else:
@@ -147,7 +191,6 @@ while True:
 
 	print("trame perdu/restant:")
 	print(indexManque)
-
 
 
 	#Envoit des trame a  retransmetre
@@ -171,6 +214,7 @@ while True:
 			indexManquetosend.pop(0)
 			i+=1
 		#je  m'assurt  que l'éméteur a  bien recus la  trame  qu'il  a recus  est qu'il n'es pas  perdu  [utile quand je chercherer a débusquer les trame  malformer]
+
 		sendACKvrf(temp,"indexOKforNext")#######a la place de indexOk peut metre un ckecksum
 		print("trame contenant les nb de trame bien récéptioner par le destinataire")
 	#on envoit a  l'éméteur un  signial  indiquant qu'il n'y a plus  de  trame a  envoiller est on verifi qu'il  est bien sincro
@@ -186,32 +230,39 @@ while True:
 
 print("récéption terminer:")
 stopAt=time.time()
-print("durée du transfer:",str(stopAt-startAt))
 
 print("trie:")
 #on va trier  en fonction  du  1er élémenet du tuple du tableaux
 indexRecieve.sort(key=itemgetter(0))
-print(indexRecieve)
-print("écriture en cour:")
+#print(indexRecieve)
 
-#on essay suprime le fichier si il existe
-#flmee de  chercherune fonction  de  test  si  le fichier existe avant  de le suprimer
-try:
-	#on  essaye  de le supprimer
-	os.remove("imgOut.txt")
-	print("fichier supprimer")
-except OSError as e:
-	print("fichier inéxistant")
+datafile=b''
+for truc in indexRecieve:
+	if (truc[1]==b''):
+		break
+	datafile+=truc[1]
+print("durée du transfer:",str(stopAt-startAt),"débit moyen de", str(len(datafile)/(stopAt-startAt)),"octée/s")
+m = hashlib.sha256()
+m.update(datafile)
 
-#on  va  ouvrire  le fichiuer
-with open('imgOut.txt', 'w') as fout: #création de du fichier data.txt sur le module si il n'est pas present, ou sinon on l'ouvre en mode ajout de data.
-	#on va  parser notre  tableaux de  tuple
-	for truc in indexRecieve:
-		#on  va selecioner  la  2eme valeur de  notre tuple  (les data)
-		fout.write(truc[1])
-fout.close() # on referme le fichier
+if checksum==m.digest():
+	print("Fichier intègre !")
+else:
+	print("/!\ bad checksum ! /!\ ")
+
+
+print("Phase écriture:")
+
+writeTo("imgOut.txt")
+
+
+
+# print("durée du transfer:",str(stopAt-startAt),"débit moyen de", str(os.stat("imgOut.txt")[5]/(stopAt-startAt)))
+
 
 print("transfer  terminer")
+purge()
+s.setblocking(False)
 s.send("STOP")
 s.send("STOP")
 s.send("STOP")
