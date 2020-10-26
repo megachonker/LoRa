@@ -60,7 +60,7 @@ else:
 	stVarIndex="L"+str(buffersize-4)
 	sVarIndex=4
 
-lenDatamap=os.stat('img.py')[6]//(buffersize-1)+1
+lenDatamap=os.stat('img.py')[6]//(buffersize-sVarIndex)+1
 
 
 #on génère notre dataMap
