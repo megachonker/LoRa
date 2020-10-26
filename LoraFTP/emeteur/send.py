@@ -4,11 +4,11 @@ import time # pour la gestion du timer
 import struct
 from struct import *
 import os
-
+import hashlib
 
 buffersize=64 #taille  du  buffer  de récéption
 
-lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_250KHZ,preamble=5, sf=8)#définition dun truc
+lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_500KHZ,preamble=5, sf=7)#définition dun truc
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
 f = open('img.py', 'rb')#on va ouvrire l'image qui port l'extention .py (pycom n'axepte pas  des fichier de format image)
 s.setblocking(True)#on dit que l'écoute ou l'envoit bloque le socket
@@ -44,13 +44,22 @@ def sendACK(vara):
 
 dataMap=[]
 f = open('img.py', 'rb')
-var=b'e'
+azer=var=b''
 while True:
 	var=f.read(buffersize-2)
 	if (var==b''):
 		break
-	dataMap.append(var)
 
+	#pour que la fin  du fichier soit fill avec des 0 pour un checksum correct
+	ajouter=(buffersize-2)-len(var)
+	if ajouter!=0:
+		var+=ajouter*b'\x00'
+	dataMap.append(var)
+	azer+=var
+
+#on va  hasher  datamap
+m = hashlib.sha256()
+m.update(azer)
 
 # print("array contenant les data maper:")
 # print(dataMap)
@@ -74,7 +83,7 @@ purge()
 s.settimeout(2)
 
 
-if (int(sendACK(pack('H3s',len(dataMap),b'OwO')))==len(dataMap)):
+if (int(sendACK(pack('H3s32s',len(dataMap),b'OwO',m.digest())))==len(dataMap)):
 	print("Nombre de trame OK")
 else:
 	print("erreur de trame")
@@ -87,7 +96,7 @@ while len(indexToSend)!=0:
 		trame=pack("H"+str(buffersize-2)+"s",indexToSend[notrame], dataMap[indexToSend[notrame]])#buffersize = tl ?
 		#j'envoit ma  trame
 		s.send(trame)
-		print("envoit trame num: "+str(notrame)+"/"+str(chargement)+" index data: "+ str(indexToSend[notrame]),"string pur",dataMap[indexToSend[notrame]])
+		print("envoit trame num: "+str(notrame)+"/"+str(chargement)+" index data: "+ str(indexToSend[notrame]))#,"string pur",dataMap[indexToSend[notrame]])
 
 	#truc a  dégager  #FAire refleciton     doit servier a
 	missingTrame=sendACK("STOP")
@@ -105,8 +114,8 @@ while len(indexToSend)!=0:
 		s.settimeout(None)
 		#on attend une trame
 		temp=s.recv(buffersize)
-		s.settimeout(1)###########  ??
-		print("mssage des message",temp)########  ?
+		s.settimeout(0.1)###########  Besoin de désincroniser pour que A ecoute et B parle
+		#print("mssage des message",temp)########  ?
 		if (temp == b'STOP'):
 			print("attente destinataire ok....")
 			sendACK("indexFIN")
