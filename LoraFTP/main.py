@@ -8,17 +8,44 @@ machineB=b'\x80}:\xc3F`'
 
 #test=[test3, test2, test3]
 #while test not empty
-while test:
-	
-	#set param from test
-	#pop this test from test
+# while test:
 
-	#run test on both machine
-	if machineA == unique_id():
+#set param from test
+#pop this test from test
 
-		#send setting on send.py 
-		machine.main('emeteur/send.py')
-		print("lol")
 
-	elif machineB == unique_id():
-		machine.main('recepteur/receptionLora.py')
+
+#tx_power
+#coding_rate
+# coding_rate=[]
+    # LoRa.CODING_4_5
+    # LoRa.CODING_4_6
+    # LoRa.CODING_4_7
+    # LoRa.CODING_4_8
+#run test on both machine
+
+	##consigne du de la passe
+
+# 2 = LoRa.BW_500KHZ
+# 1 = LoRa.BW_250KHZ
+# 0 = LoRa.BW_125KHZ
+
+
+
+bandwidth=1
+sf=8
+preamble=5
+buffersize=64
+# tx_power  2 - 20
+power=15
+
+if machineA == machine.unique_id():
+	import send
+	#bandwidth=2, sf=7, buffersize=64, preamble=5, fichier='azer.txt'
+	send.Send.__init__(bandwidth,sf,buffersize,preamble,"img.py",power)
+
+
+
+if machineB == machine.unique_id():
+	import receptionLora
+	receptionLora.Rcv.__init__(bandwidth,sf,buffersize,preamble,"azer.txt",power)
