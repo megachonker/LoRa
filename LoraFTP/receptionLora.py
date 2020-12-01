@@ -16,13 +16,13 @@ import gps
 class Rcv:
 	"""docstring for Send"""
 
-	def __init__(bandwidth=2, sf=7, buffersize=64, preamble=5, fichier='azer.txt',power=15):
+	def __init__(bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='azer.txt',power=14,coding=1):
 
 		# fichier='azer.txt'
 		# buffersize=64
 		#buffersize=64 #taille  du  buffer  de récéption
 		# lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_500KHZ,preamble=5, sf=7)#définition dun truc
-		lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=bandwidth,preamble=preamble, sf=sf,tx_power=power)#définition dun truc
+		lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=bandwidth,preamble=preamble, sf=sf,tx_power=power,coding_rate=coding)#définition dun truc
 		s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
 		#
 		# #ne pouvant avoir une résolution en  dessou de  la  seconde  sans passer  par des  tick ces mort
@@ -240,7 +240,7 @@ class Rcv:
 				temp=b''
 
 				#je  crée  une  trame  qui  sera  égale  a la taille  du buffer ou inferieure  tant qu'il  me   reste des valeur  a y metre
-				##	  i<(buffersize/2) #mieux ?
+				##	  i<(buffersize/2) #mieux ? ###########################
 				while i<32 and len(indexManquetosend):
 					#je rajoute de nouveaux Idex de trame  manquante  a ma trame  éxistante
 					temp+=pack('H',indexManquetosend[0])
@@ -271,6 +271,13 @@ class Rcv:
 ####
 
 		print("récéption terminer:")
+
+		purge()
+		s.setblocking(False)
+		s.send("FinTransmition")
+		s.send("FinTransmition")
+		s.send("FinTransmition")
+
 		stopAt=time.time()
 
 		print("trie:")
@@ -300,8 +307,3 @@ class Rcv:
 		# print("durée du transfer:",str(stopAt-startAt),"débit moyen de", str(os.stat("imgOut.txt")[5]/(stopAt-startAt)))
 
 		print("transfer  terminer")
-		purge()
-		s.setblocking(False)
-		s.send("FinTransmition")
-		s.send("FinTransmition")
-		s.send("FinTransmition")

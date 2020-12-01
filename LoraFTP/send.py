@@ -12,13 +12,13 @@ import hashlib
 class Send:
 	"""docstring for Send"""
 
-	def __init__(bandwidth=2, sf=7, buffersize=64, preamble=5, fichier='img.py',power=15):
+	def __init__(bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='img.py',power=14,coding=1):
 		#super(Send, self).__init__()
 		#self.arg = arg
 
 		#buffersize=64 #taille  du  buffer  de récéption
 		# lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_500KHZ,preamble=5, sf=7)#définition dun truc
-		lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=bandwidth,preamble=preamble, sf=sf,tx_power=power)#définition dun truc
+		lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=bandwidth,preamble=preamble, sf=sf,tx_power=power,coding_rate=coding)#définition dun truc
 		s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
 		f = open(fichier, 'rb')#on va ouvrire l'image qui port l'extention .py (pycom n'axepte pas  des fichier de format image)
 
@@ -81,8 +81,7 @@ class Send:
 					indexToSend.append(pointeur)#  I n'a  pas a être la et on e st  sensermodifier les h
 			#on affiche  la geule de la  trame entierre
 			print("trame a renvoiller récéptioner :",indexToSend)
-
-			print("envoit confirmation reception")
+			return True
 
 
 		#initialisation de la map de donnée
@@ -166,50 +165,40 @@ class Send:
 				s.send(trame)
 				print("envoit trame num: "+str(notrame)+"/"+str(chargement)+" index data: "+ str(indexToSend[notrame]))#,"string pur",dataMap[indexToSend[notrame]])
 
-			#marque la fint d'une transmition
-			#missingTrame=sendACK("STOP")
-
-			###SINCRO DE  LA FIN  D4ENVOIT
-
 			#on  flush  la  variable  qui stoque  la  précédante  session  d'index a  send
 			indexToSend=[]
-			var=sendACK("STOP")
-			print(str(var)+"VARIABLE")
-			AddToIndexToSend(var)
+			#on verifi qu'il y a encore  des data
+			indextrame=sendACK("STOP")
+			if (indextrame == b'FinTransmition'):
+				break
 
 			#reception des trame manquante
 			print("detection des trame manquante")
 
-
-
-			#on indique que  l'on écoute sagement
-			s.setblocking(True)
-			#on enleve le time  out
-			s.settimeout(None)
-			###ON  va  écouter  les trame a  envoiller
 			while True:
+				#on  va  décomposer la  trame est l'ajouter  a  la  bd
+				AddToIndexToSend(indextrame)
+				indextrame = sendACK("indexOKforNext")
 
-				#desincro
-#				time.sleep(0.1)
-				#on attend une trame
-				temp = sendACK("indexOKforNext")
-				#temp=s.recv(buffersize)
-				s.settimeout(timeout)###########  Besoin de désincroniser pour que A ecoute et B parle
-				print("INFO listtrame TRAME reçus",temp)# # DEBUGage
-				if (temp == b'FinTransmition'):
+
+				#avec un prochaine opti  doit plus exister
+				if (indextrame == b'FinTransmition'):
 					break
-				if (temp == b'STOPliste'):
+
+
+
+				#indextrame=s.recv(buffersize)
+				# s.settimeout(timeout)###########  Besoin de désincroniser pour que A ecoute et B parle
+				print("INFO TrameListe reçus",indextrame)# # DEBUGage
+
+				if (indextrame == b'STOPliste'):
 					print("Attente confirmation du  de stop  d'envoit trame")
 					sendACKvrf("indexFIN","GO")
 					print("SINKRO")
-					#s.send("indexFIN")
 					break
-				#on  va  décomposer la  trame est l'ajouter  a  la  bd
-				AddToIndexToSend(temp)
-				#trame  ajouter  on  dit qu'on est  chaud pour  la suite
-				#sendACK("indexOKforNext")
-			print("toute numero de  chunck a renvoiller recus:")
-			print(indexToSend)
+
+		print("toute numero de  chunck a renvoiller recus:")
+		print(indexToSend)
 
 
 		print("sortie!")
