@@ -264,7 +264,6 @@ class Rcv:
 			tmpp=b'indexFIN'
 			while tmpp==b'indexFIN':
 				tmpp=sendACK("GO")
-				pass
 			unboxing(tmpp)
 
 			print("début de la rerectption")
