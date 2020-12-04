@@ -75,23 +75,29 @@ class Rcv:
 				totaldata=(len(indexRecieve)+1)*int(playloadsize)
 
 				# arrayStat.append((unpackted[0], (totaldata/totaltemp), time.time(), gps.coord,lora.stats()[1], lora.stats()[2]))
-				print("Unboxing: supression du chunk "+str(unpackted[0])+" débit moyen: "+str(totaldata/totaltemp)+"octée/s position: "+str(gps.coord))
+				print("Unboxing: chunk "+str(unpackted[0])+" Download: "+str((len(indexRecieve)+1)/nbtrame*100)+"% débit moyen: "+str(totaldata/totaltemp)+"octée/s "+"position: "+str(gps.coord)+" power reçus "+str(lora.stats()[1])+"dBm, SNR: "+str(lora.stats()[2])+"dB ",  end='')
 
-
-				#on vérifie si ces bien une trame  de data
-				try:
-					indexManque.remove(unpackted[0])
-					indexRecieve.append(unpackted) #on archive le packet recus
-				except ValueError:
-					#debug value
-					print("List des  packet a receptioner ",str(indexManque))
-					# print("liste des packet déja  receptioner", str(indexRecieve))
-					print("chunk  a  suprimer :",unpackted[0])
-					print("packet unpackted", str(unpackted))
-					print("raw packet", str(rawtram))
-
-				#lora.stats()
-
+				#pour  verifier si  un  packet DOUBLON OU est malformer  on verifi  que l'index  existe  bien
+				if unpackted[0] in indexManque:
+					#on vérifie si ces bien une trame  de data
+					#try  plus nécésaire ?
+					try:
+						#on archive le packet recus
+						indexRecieve.append(unpackted)
+						#caclule en%  des trame perdu #####peut être  opti
+						print("packet  perdu  "+str(lostpacket(unpackted[0]))+"%")
+						#on  suprime  le  packet  de la  liste de  packet a  renvoiller
+						indexManque.remove(unpackted[0])
+					except ValueError:
+						#debug value
+						print("List des  packet a receptioner ",str(indexManque))
+						# print("liste des packet déja  receptioner", str(indexRecieve))
+						print("chunk  a  suprimer :",unpackted[0])
+						print("packet unpackted", str(unpackted))
+						print("raw packet", str(rawtram))
+				else:
+					#ajouter un compteur pour dire  q'uon a un packet  corrompu  pour les  packet  perdu !!
+					print("Unboxing: BAD INDEX Duplicate Packet or Malformed  packet ?")
 
 		#définition d'une fonction d'aquitement
 		def sendACK(vara):
@@ -124,6 +130,18 @@ class Rcv:
 					else:
 						print("ACKvfr attendue :  ", match.encode(), "reçus", sendACK(data))
 			return True
+
+		#fonction qui  va  calculer  les   packet perdu
+		def lostpacket(id):
+			indexlost=indexManque.index(id)
+			for a in range(len(indexRecieve)):
+				if(indexRecieve[a][0]==id):
+					indexadd=a
+					break
+			#trame perdu +  trame  reception  =  nombre trame  totale
+			totaltramesend=indexadd+indexlost+1
+			#raport  de perte
+			return (indexlost+1)/totaltramesend*100
 
 		def writeTo(name):
 			# global indexRecieve #ABON ?
