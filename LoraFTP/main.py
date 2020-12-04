@@ -1,6 +1,11 @@
 import machine
 import os
 
+import pycom
+##Juste pour pouvoire  mieux dormire la  nuit et pas  avoire des   sapin de  noel  en   continue  !
+pycom.heartbeat(False)
+
+
 machineA=b'\x80}:\xc2\xec\xf0'
 machineB=b'\x80}:\xc3F`'
 
