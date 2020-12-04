@@ -60,10 +60,6 @@ class Rcv:
 
 
 		def unboxing(rawtram):
-			#on  autorise  la définition a avoire accèse au  meme variable que le main
-			# global indexRecieve
-			# global indexManque
-			# global startAt
 
 			#on verifie si on peut umpack la trame
 			try:			#"H"+str(buffersize-2)
@@ -122,7 +118,6 @@ class Rcv:
 						break
 					else:
 						print("ACKvfr attendue :  ", match, "reçus", sendACK(data))
-
 				if(type(match)==str):
 					if sendACK(data) == match.encode() :
 						break
@@ -169,6 +164,7 @@ class Rcv:
 		print("nombre de trame", str(nbtrame))
 
 
+
 		#on déduit le type de  variable a  utiliser en fonction du  nombre de trame total
 		if nbtrame<256:
 			tVarIndex="B"
@@ -200,8 +196,8 @@ class Rcv:
 		startAt=time.time()
 		#je  demande explicitement d'écouter j'usqua se que je  recois une trame
 		s.setblocking(True)
-		#tant qu'il  y a des trame  manquante
 		while True:
+
 			#tant que l'éméteur veux envoiller des donnée
 			while True:
 				#je  reçois ma trame
@@ -215,7 +211,7 @@ class Rcv:
 				else:
 					#on va traiter la  trame  recus
 					unboxing(trame)
-		##j'aurait pus  inverser les if avec un != ?
+
 
 			#si il  n'y a plus de trame manquante
 			if(len(indexManque)==0):
@@ -235,6 +231,9 @@ class Rcv:
 
 			#on copy explicitement le  précédant tableaux dans un  nouveaux
 			indexManquetosend=indexManque.copy()
+
+			# time.sleep(0.250)
+
 			#tant qu'il reste des trame dans la liste TEMPORAIRE des trame qui  manque
 			while len(indexManquetosend):
 				#vieux conmpeur
