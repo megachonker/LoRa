@@ -45,11 +45,11 @@ machineB=b'\x80}:\xc3F`'
 
 
 coding=1
-bandwidth=2
+bandwidth=1
 sf=7
 preamble=8
 buffersize=64
-power=15
+power=10
 
 if machineA == machine.unique_id():
 	import send
