@@ -24,7 +24,10 @@ class Rcv:
 		# lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_500KHZ,preamble=5, sf=7)#définition dun truc
 		lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=bandwidth,preamble=preamble, sf=sf,tx_power=power,coding_rate=coding)#définition dun truc
 		s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
-		#
+		print(lora.stats())
+		print("bandwidth="+str(bandwidth)+"preamble="+str(preamble)+"sf="+str(sf)+"tx_power="+str(power)+"coding_rate="+str(coding))
+		print("bandtith"+str(lora.bandwidth())+"preamble"+str(lora.preamble())+"sf"+str(lora.sf())+"tx_power"+str(lora.tx_power())+"coding_rate"+str(lora.coding_rate()))
+
 		# #ne pouvant avoir une résolution en  dessou de  la  seconde  sans passer  par des  tick ces mort
 		# ltime=int()
 		# def crono():
