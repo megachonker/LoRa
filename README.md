@@ -9,15 +9,21 @@ voire  l'impacte de la  distance est des  différante modulation  sure ce débit
 
 ## état des lieux:
 - Envoit de binaire hover Lora ✔
-- Detection des trame perdu ✔ (avec le minimum de bande passante)
-- Retransmition trame perdu ✔
+- Fiabilitée ✔
+  - Detection des trame perdu ✔
+  - Retransmition trame perdu ✔
+  - Crash ✘ (Rare)
 - Intégritée de la playload Recepteur ✔
-- Portage sur librairie ✘ (pour les benchmark) 
-- Verification d'intégritée ✔ 
+  - Controlle d'intégritée ✔
+  - Correction erreur ✘ (recherche si packet corrompu ou bug algo)
+- Portage sur librairie ✘ (pour les benchmark)
+  - Lancement transfère avec  paramètre ✔
+  - Syncronisation des paramètre ✘
+  - Output JSON ✘
 
 ## Objectif future
 ### Benchmark et Mesure
-- Besoin de l'algorhitme de transfert! (not yet avaible)
+- Algorhitme de transfert! POSSIBLE
 - estimation d'un débit minimal pour qu'une communication soit valide!
 
 #### estimation du débit max en jouant sur les différant facteur:
@@ -28,5 +34,5 @@ voire  l'impacte de la  distance est des  différante modulation  sure ce débit
 - playload lenght
 
 ## plot
-plot des data dans un espace tridimentionel avec gnuplot
-faire des script pour expposer les différant résultat glannée
+- plot des data dans un espace tridimentionel avec gnuplot
+- faire des script pour expposer les différant résultat glannée
