@@ -56,21 +56,23 @@ class Send:
 			s.setblocking(True)
 			return retour
 
-		#on  envoit un  ack et  on check  l'argument  (qui peut  etre un  byte  ou  bien  un  str)
 		def sendACKvrf(data, match):
 			while True:
 				if(type(match)==bytes):
+					#print("ACKvfr type  = bytes")
 					if sendACK(data) == match:
+						#print("ACKvfr break")
 						break
 					else:
-						print("Réponse inatentue/Malformed", sendACK(data), "attendue :  ", match)
+						print("ACKvfr attendue :  ", match, "reçus", sendACK(data))
 				if(type(match)==str):
+					#print("ACKvfr type  = str")
 					if sendACK(data) == match.encode() :
+						#print("ACKvfr break")
 						break
 					else:
-						print("Réponse inatentue/Malformed", sendACK(data), "attendue :  ", match.encode())
+						print("ACKvfr attendue :  ", match.encode(), "reçus", sendACK(data))
 			return True
-
 
 		#on va  utiliser la  trame  rentrée   est  la décomposer  est ajouter  les  numero
 		def AddToIndexToSend(temp):
