@@ -212,6 +212,7 @@ class Rcv:
 					#on va traiter la  trame  recus
 					unboxing(trame)
 
+			print("Packet perdu"+str(len(indexManque)/(len(indexRecieve)+len(indexManque))*100)+"%")
 
 			#si il  n'y a plus de trame manquante
 			if(len(indexManque)==0):
