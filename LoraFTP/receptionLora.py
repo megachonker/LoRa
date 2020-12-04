@@ -292,15 +292,16 @@ class Rcv:
 			if (truc[1]==b''):
 				break
 			datafile+=truc[1]
-		print("durée du transfer:",str(stopAt-startAt),"débit moyen de", str(len(datafile)/(stopAt-startAt)),"octée/s")
+		print("durée du transfer:",str(stopAt-startAt),"seconde débit moyen de", str(len(datafile)/(stopAt-startAt)),"octée/s")
 		m = hashlib.sha256()
 		m.update(datafile)
 
+		print("################")
 		if checksum==m.digest():
 			print("Fichier intègre !")
 		else:
 			print("/!\ bad checksum ! /!\ ")
-
+		print("################")
 
 		print("Phase écriture:")
 
