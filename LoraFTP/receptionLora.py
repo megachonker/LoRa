@@ -12,11 +12,15 @@ import hashlib
 
 import gps
 
+from sys import exit
+
+
 #
 class Rcv:
 	"""docstring for Send"""
 
-	def __init__(bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='azer.txt',power=14,coding=1):
+
+	def __init__(bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='azer.txt',power=14,coding=1,timeout=0.5,maxretry=10):
 
 		# fichier='azer.txt'
 		# buffersize=64
@@ -101,7 +105,7 @@ class Rcv:
 
 		#définition d'une fonction d'aquitement
 		def sendACK(vara):
-			s.settimeout(0.5)
+			s.settimeout(timeout)
 			i=0
 			while True:
 				i+=1
@@ -113,22 +117,26 @@ class Rcv:
 					break
 				except OSError as socket :
 					print("ACK timeout n° ",i)
-			s.setblocking(True)
+					time.sleep(0.1)
+					if(i==maxretry):
+						exit("connexion  perdu")
+			#s.setblocking(True)
 			return retour
 
 
 		def sendACKvrf(data, match):
 			while True:
+				mydata=sendACK(data)
 				if(type(match)==bytes):
-					if sendACK(data) == match:
+					if mydata == match:
 						break
 					else:
-						print("ACKvfr attendue :  ", match, "reçus", sendACK(data))
+						print("ACKvfr attendue :  ", match, "is byte  reçus", mydata)
 				if(type(match)==str):
-					if sendACK(data) == match.encode() :
+					if mydata == match.encode() :
 						break
 					else:
-						print("ACKvfr attendue :  ", match.encode(), "reçus", sendACK(data))
+						print("ACKvfr attendue :  ", match.encode(), "  is str  reçus", mydata)
 			return True
 
 		#fonction qui  va  calculer  les   packet perdu
@@ -219,7 +227,11 @@ class Rcv:
 			#tant que l'éméteur veux envoiller des donnée
 			while True:
 				#je  reçois ma trame
+				##experimentale
+				s.settimeout(10)##
 				trame=s.recv(buffersize)
+				s.settimeout(timeout)##
+
 				#quand l'éméteur  a fini ENvoit de  stop pour  passer a la partie suivante
 				if trame==b'STOP':
 					print("fin de flux reçus  !")
@@ -251,7 +263,7 @@ class Rcv:
 			#on copy explicitement le  précédant tableaux dans un  nouveaux
 			indexManquetosend=indexManque.copy()
 
-			# time.sleep(0.250)
+			time.sleep(0.250)
 
 			#tant qu'il reste des trame dans la liste TEMPORAIRE des trame qui  manque
 			while len(indexManquetosend):
@@ -270,7 +282,7 @@ class Rcv:
 					i+=1
 				#je  m'assurt  que l'éméteur a  bien recus la  trame  qu'il  a recus  est qu'il n'es pas  perdu  [utile quand je chercherer a débusquer les trame  malformer]
 				sendACKvrf(temp,"indexOKforNext")#######a la place de indexOk peut metre un ckecksum
-				print("INDEXEechange"+str(i)+" liste des chunck")
+				print("INDEXE echangée  "+str(i)+" liste des chunck")
 			#on envoit a  l'éméteur un  signial  indiquant qu'il n'y a plus  de  trame a  envoiller est on verifi qu'il  est bien sincro
 
 			print("on STOP la l'émition")
@@ -328,3 +340,6 @@ class Rcv:
 		# print("durée du transfer:",str(stopAt-startAt),"débit moyen de", str(os.stat("imgOut.txt")[5]/(stopAt-startAt)))
 
 		print("transfer  terminer")
+
+		# def getdata():
+		# 	print(str(totaldata))
