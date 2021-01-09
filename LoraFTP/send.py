@@ -8,11 +8,13 @@ import struct
 from struct import *
 import os
 import hashlib
+from sys import exit
 
 class Send:
 	"""docstring for Send"""
-
-	def __init__(bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='img.py',power=14,coding=1):
+	def MABITE():
+		print("HE  FUCKING   HUGE")
+	def __init__(self,bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='img.py',power=14,coding=1,timeout=0.5,maxretry=10):
 		#super(Send, self).__init__()
 		#self.arg = arg
 
@@ -27,7 +29,6 @@ class Send:
 		f = open(fichier, 'rb')#on va ouvrire l'image qui port l'extention .py (pycom n'axepte pas  des fichier de format image)
 
 		s.setblocking(True)#on dit que l'écoute ou l'envoit bloque le socket
-		timeout=1
 		s.settimeout(timeout) #temps  a attendre avant de  considérer une trame  comme perdu ==> DOIT ETRE BC  PLUS COURT ! ! ! ! ! quelque  MS
 
 
@@ -41,7 +42,7 @@ class Send:
 
 		#définition d'une fonction d'aquitement
 		def sendACK(vara):
-			s.settimeout(0.5)
+			s.settimeout(timeout)
 			i=0
 			while True:
 				i+=1
@@ -53,25 +54,27 @@ class Send:
 					break
 				except OSError as socket :
 					print("ACK timeout n° ",i)
-			s.setblocking(True)
+					if(i==maxretry):
+						exit("connexion  perdu")
 			return retour
 
 		def sendACKvrf(data, match):
 			while True:
+				mydata=sendACK(data)
 				if(type(match)==bytes):
 					#print("ACKvfr type  = bytes")
-					if sendACK(data) == match:
+					if mydata == match:
 						#print("ACKvfr break")
 						break
 					else:
-						print("ACKvfr attendue :  ", match, "reçus", sendACK(data))
+						print("ACKvfr attendue :  ", match, " type byte reçus", mydata)
 				if(type(match)==str):
 					#print("ACKvfr type  = str")
-					if sendACK(data) == match.encode() :
+					if mydata == match.encode() :
 						#print("ACKvfr break")
 						break
 					else:
-						print("ACKvfr attendue :  ", match.encode(), "reçus", sendACK(data))
+						print("ACKvfr attendue :  ", match.encode(), " type str reçus", mydata)
 			return True
 
 		#on va  utiliser la  trame  rentrée   est  la décomposer  est ajouter  les  numero
@@ -87,7 +90,7 @@ class Send:
 					indexToSend.append(pointeur)#  I n'a  pas a être la et on e st  sensermodifier les h
 			#on affiche  la geule de la  trame entierre
 			print("trame a renvoiller récéptioner :",indexToSend)
-			return True
+			#return True
 
 
 		#initialisation de la map de donnée
@@ -156,6 +159,7 @@ class Send:
 		purge() ##verifier si utile ?
 
 					##pack('H3s32s'
+				#utiliser  un  sendACKvrf ??
 		if (int(sendACK(pack('L3s32s',lenDatamap,b'OwO',m.digest())))==lenDatamap):
 			print("Nombre de trame OK")
 		else:
@@ -205,6 +209,4 @@ class Send:
 
 		print("toute numero de  chunck a renvoiller recus:")
 		print(indexToSend)
-
-
 		print("sortie!")
