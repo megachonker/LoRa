@@ -160,7 +160,9 @@ class Send:
 
 					##pack('H3s32s'
 				#utiliser  un  sendACKvrf ??
-		if (int(sendACK(pack('L3s32s',lenDatamap,b'OwO',m.digest())))==lenDatamap):
+		# sendACK(pack('L3s32s',lenDatamap,b'OwO',m.digest()),str(lenDatamap))
+
+		if (str(sendACK(pack('L3s32s',lenDatamap,b'OwO',m.digest())))==str(lenDatamap)):
 			print("Nombre de trame OK")
 		else:
 			print("erreur de trame")
