@@ -6,17 +6,12 @@ from network import LoRa #pour être en mode LoRa
 import socket #pour envoyer des trames
 #pour  les  signial  de sortie
 from sys import exit
-
 import pycom
 ##Juste pour pouvoire  mieux dormire la  nuit et pas  avoire des   sapin de  noel  en   continue  !
 pycom.heartbeat(False)
 
 machineA=b'\x80}:\xc2\xec\xf0'
 machineB=b'\x80}:\xc3F`'
-
-#DOIT etre equivalent a la passe
-lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=0,preamble=10, sf=12,tx_power=20,coding_rate=1)#définition dun truc
-s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
 
 ##initialisation pour  que  ça  run  mais ces  par  défaut  nbormalent
 coding=1
@@ -65,6 +60,9 @@ def sendACKvrf(data, match):
 	return True
 
 def run():
+	lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=1,preamble=10, sf=12,tx_power=20,coding_rate=1)#définition dun truc
+	s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
+
 	print("fc run")
 	if machineA == machine.unique_id():
 		import send
