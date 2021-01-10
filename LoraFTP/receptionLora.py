@@ -176,7 +176,10 @@ class Rcv:
 		print("Attente Trame Datalenght")
 		#purge le buffer au  cas ou
 		purge()
+
+		s.settimeout(10)##EXPERIMENTAL POUR PAS BLOQUER
 		#pour définire nbtrame  on va  accepter que les  trame  étant sur 1 octée en Long
+		varnul=0
 		while True:
 			try:
 				nbtrame=unpack('L3s32s',s.recv(buffersize))
@@ -186,10 +189,12 @@ class Rcv:
 					break
 			except Exception as e:
 				print("INITIALISATION: nombretrame err : Trame Non  attendue",str(nbtrame))
-
+				varnul+=1
+				if(varnul==maxretry):
+					exit("connexion  perdu")
 		print("nombre de trame", str(nbtrame))
 
-
+		s.settimeout(timeout)
 
 		#on déduit le type de  variable a  utiliser en fonction du  nombre de trame total
 		if nbtrame<256:
@@ -296,7 +301,9 @@ class Rcv:
 			#on commence  la  reception qqd  on est  sur d'avoir  du  binaire
 			tmpp=b'indexFIN'
 			while tmpp==b'indexFIN':
+				print(tmpp)#debug
 				tmpp=sendACK("GO")
+				print(tmpp)#debug
 			unboxing(tmpp)
 
 			print("début de la rerectption")
@@ -341,5 +348,5 @@ class Rcv:
 
 		print("transfer  terminer")
 
-		# def getdata():
-		# 	print(str(totaldata))
+
+		print(str(indexRecieve))
