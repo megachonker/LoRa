@@ -169,24 +169,26 @@ maxretry=10
 #si  desincro  ces  la  mort !
 def benchmark():
 	for power in range(Dpower,2,-1):
-		print("power: "+str(power), end=', ')
+		# print("power: "+str(power), end=', ')
 		for preamble in range(Dpreamble,0,-1):
-			print("preamble: "+str(preamble), end=', ')
-			for coding in range(Dcoding,4):
-				print("coding: "+str(coding), end=', ')
-				for buffersize in range(Dbuffersize,256,8):
-					print("buffersize: "+str(buffersize), end=', ')
+			# print("preamble: "+str(preamble), end=', ')
+			for coding in range(Dcoding,5):
+				# print("coding: "+str(coding), end=', ')
+				for buffersize in range(Dbuffersize,257,64):#256
+					# print("buffersize: "+str(buffersize), end=', ')
 					for bandwidth in range(Dbandwidth,3):
-						print("bandwidth: "+str(bandwidth), end=', ')
+						# print("bandwidth: "+str(bandwidth), end=', ')
 						for sf in range(Dsf,6,-1):
-							print("sf: "+str(sf), end='\n')
-							print("on  lance une  run ?")
+							# print("sf: "+str(sf)+"Start  RUN
+							print("sf="+str(sf)+" bandwidth="+str(bandwidth)+" buffersize="+str(buffersize)+" coding_rate="+str(coding)+" preamble="+str(preamble)+" tx_power="+str(power))
 							run()
-
+benchmark()
 while True:
 	try:
 		print("on  veux benchmark ?")
 		benchmark()
+		print("redemarage du bench ! ")
+
 	#pour  la partie  reception
 	except OSError as socket:
 		print("Main plus de connection "+str(socket))
