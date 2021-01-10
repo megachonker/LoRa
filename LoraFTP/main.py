@@ -68,50 +68,60 @@ def run():
 	print("fc run")
 	if machineA == machine.unique_id():
 		import send
+		sendACKvrf("tla?","jesuisla")
+		print("MES parametre:")
+		print("sf="+str(sf)+" bandwidth="+str(bandwidth)+" buffersize="+str(buffersize)+" coding_rate="+str(coding)+" preamble="+str(preamble)+" tx_power="+str(power))
+		print("éméteur lancement transfer")
 		try:
-			print("on send ???")
 			send.Send(bandwidth,sf,buffersize,preamble,"img.py",power,coding,timeout,maxretry)
-			send.Send.MABITE()
-			#send.Send.__init__(bandwidth,sf,buffersize,preamble,"img.py",power,coding,timeout,maxretry)
+			# send.Send.MABITE()
 		except SystemExit as e:
 			print("exeption "+str(e))
 
-		print("brheeux")
-		sendACKvrf("tla?","jesuisla")
-		print("l'envoit ces   bien  déroulerééé !")
-
 	if machineB == machine.unique_id():
 		import receptionLora
+
+
+		while s.recv(buffersize) != b'tla?':
+			pass
+		#critique  ?
+		s.send("jesuisla")
+		s.send("jesuisla")
+		print("message  envoiller !")
+
+		print("MES parametre:")
+		print("sf="+str(sf)+" bandwidth="+str(bandwidth)+" buffersize="+str(buffersize)+" coding_rate="+str(coding)+" preamble="+str(preamble)+" tx_power="+str(power))
+		print("éméteur lancement transfer")
+
 		try:
 			#on l'ance le programe de reception
-			receptionLora.Rcv.__init__(bandwidth,sf,buffersize,preamble,"azer.txt",power,coding,timeout,maxretry).getdata()
-			# mafcsend  =  receptionLora.Rcv.__init__(bandwidth,sf,buffersize,preamble,"azer.txt",power,coding,timeout,maxretry)
-			# mafcsend.getdata()
+			receptionLora.Rcv.__init__(bandwidth,sf,buffersize,preamble,"azer.txt",power,coding,timeout,maxretry)
 
-			# receptionLora.Rcv.getdata()
 		#si on  a  une exeption exit  (fait par trop  de retry )
 		except SystemExit as e:
 			#on  abolis d'exeption
 			print("exeption "+str(e))
-		#attend j'usqua un  message ||durré d'un transfer au pire
-		#on attend j'usqua 30 second une rep concluante
-		s.settimeout(30)
-		#on verifie que ça soit pas une interférance
-		avar=""
-		while avar!= b'tla?':
-			print("en  attante  de trame")
-			#si timed out  l'erreur remonte j'usqaux main benchmark
-			avar=s.recv(64)
-			print(avar)
-		#si l'on recois le bon  message on va dire au  module  oposer  que nous somme  la
-			#30 foit
-		for a in range(5):
-			print("jesuisal")
-			s.send("jesuisla")
-		#Puisque nous avon s  reçus un  des 30 message  nous parton du  principe que nous avonc 50% de chance si ces le dernier message  que l'on avais  reus que l'autre reçois
-			#si on a reçus un des 30 message ça marche dansles 2 sens
-		#on   part du principe qu'il en a reçus au moin UN !
-		print("la  reception ces  bien  derouler")
+
+
+		# #attend j'usqua un  message ||durré d'un transfer au pire
+		# #on attend j'usqua 30 second une rep concluante
+		# s.settimeout(30)
+		# #on verifie que ça soit pas une interférance
+		# avar=""
+		# while avar!= b'tla?':
+		# 	print("en  attante  de trame")
+		# 	#si timed out  l'erreur remonte j'usqaux main benchmark
+		# 	avar=s.recv(64)
+		# 	print(avar)
+		# #si l'on recois le bon  message on va dire au  module  oposer  que nous somme  la
+		# 	#30 foit
+		# for a in range(10):
+		# 	print("jesuisal")
+		# 	s.send("jesuisla")
+		# #Puisque nous avon s  reçus un  des 30 message  nous parton du  principe que nous avonc 50% de chance si ces le dernier message  que l'on avais  reus que l'autre reçois
+		# 	#si on a reçus un des 30 message ça marche dansles 2 sens
+		# #on   part du principe qu'il en a reçus au moin UN !
+		# print("la  reception ces  bien  derouler")
 
 
 #Bande passante
