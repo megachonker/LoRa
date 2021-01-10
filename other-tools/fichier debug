@@ -1,13 +1,23 @@
 #!/bin/bash
-for u in $(seq 0 10)
+#echo 1er pour le  nombre de packet \
+#2eme pour la taille du packet
+nb=${1:-10}
+size=${2:-62}
+
+packet(){
+for number in $(seq 0 $1)
 do
-for number in $(seq 0 9)
+	chunk=$number
+	for i in  $(seq 2 $size);
+	do
+		chunk+=$number
+	done
+	echo -n $chunk
+done
+}
+
+for u in $(seq 0 $((nb/9)))
 do
-chunk=$number
-        for i in  $(seq 2 62);
-        do
-                chunk=$chunk$number
-        done
-        echo -n $chunk
+packet 9
 done
-done
+packet $((nb%9))
