@@ -21,25 +21,32 @@ preamble=8
 buffersize=64
 power=15
 timeout=0.5
-maxretry=10
+maxretry=15
 
+s.settimeout(None)#int(str(machine.rng())[:4])/2000
 
 
 def sendACK(vara):
-	s.settimeout(2)
 	i=0
 	while True:
+		s.settimeout(0.5)#int(str(machine.rng())[:4])/2000
 		i+=1
 		s.send(vara)
 		print("Main ACK Envoit: "+str(vara))
+		print("Main ACK Envoit: "+str(vara), end='')
+		#time.sleep(int(str(machine.rng())[:3])/1000)
 		try:
 			retour=s.recv(buffersize)
+			print(" =>"+str(retour))
 			break
 		except OSError as socket :
 			print("Main ACK timeout n° ",i)
+			print(" => timeout n° ",i)
 			##30 ok
 			if(i==5):
 				exit("main connexion  perdu")
+			# if(i==5):
+			# 	exit("main connexion  perdu")
 	return retour
 
 def sendACKvrf(data, match):
