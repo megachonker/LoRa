@@ -42,35 +42,38 @@ def purge():
 def sendACK(vara):
 	i=0
 	while True:
-		s.settimeout(0.5)#int(str(machine.rng())[:4])/2000
 		i+=1
+		#Timeout réglée  entre  5-0 seconde
+		s.settimeout(int(str(machine.rng())[:4])/2000)
 		s.send(vara)
 		print("Main ACK Envoit: "+str(vara), end='')
-		#time.sleep(int(str(machine.rng())[:3])/1000)
 		try:
 			retour=s.recv(buffersize)
 			print(" =>"+str(retour))
-			break
+			return retour
 		except OSError as socket :
 			print(" => timeout n° ",i)
 			##30 ok
 			# if(i==5):
 			# 	exit("main connexion  perdu")
-	return retour
 
+#fonction bloquante qui envoit  est attend 2 méssage spécifier
 def sendACKvrf(data, match):
 	while True:
+		datatype=type(match)
 		supertruc=sendACK(data)
-		if(type(match)==bytes):
+
+		if(datatype==bytes):
 			if supertruc == match:
-				print("match byte")
-				break
+				print("match byte")#debug
+				return True
 			else:
 				print("ACKvfr attendue :  ", match, "byte reçus", supertruc)
-		if(type(match)==str):
+
+		if(datatype==str):
 			if supertruc == match.encode() :
-				print("match string")
-				break
+				print("match string")#debug
+				return True
 			else:
 				print("ACKvfr attendue :  ", match.encode(), "str reçus", supertruc)
 	return True
@@ -79,38 +82,45 @@ def run():
 	lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=1,preamble=10, sf=12,tx_power=20,coding_rate=1)#définition dun truc
 	s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
 
-	print("fc run")
+def displayParam(var):
+	print("MAIN parametre du "+var+":")
+	print("sf="+str(sf)+" bandwidth="+str(bandwidth)+" buffersize="+str(buffersize)+" coding_rate="+str(coding)+" preamble="+str(preamble)+" tx_power="+str(power))
+	print("éméteur lancement transfer")
+
+
+def run():
+	#Ce que  effectura L'éméteur
 	if machineA == machine.unique_id():
 		import send
+		print(lora.stats())
+		print(lora.preamble())
 		sendACKvrf("tla?","jesuisla")
-		print("MES parametre:")
-		print("sf="+str(sf)+" bandwidth="+str(bandwidth)+" buffersize="+str(buffersize)+" coding_rate="+str(coding)+" preamble="+str(preamble)+" tx_power="+str(power))
-		print("éméteur lancement transfer")
+		print(lora.stats())
+		print(lora.preamble())
+		displayParam("Emeteur")
+
 		try:
+			#Lancement de la  partie d'émition:
 			send.Send(bandwidth,sf,buffersize,preamble,"img.py",power,coding,timeout,maxretry)
-			# send.Send.MABITE()
-		except SystemExit as e:
-			print("exeption "+str(e))
+		#Exeption Catch si le script veux s'arreter
+		except SystemExit as detaille:
+			print("Exeption Exit "+str(detaille))
 
 	if machineB == machine.unique_id():
 		import receptionLora
-
-
+		s.settimeout(None)#int(str(machine.rng())[:4])/2000
 		while s.recv(buffersize) != b'tla?':
 			pass
+		print("passed")
 		#critique  ?
 		s.send("jesuisla")
 		s.send("jesuisla")
-		print("message  envoiller !")
 
-		print("MES parametre:")
-		print("sf="+str(sf)+" bandwidth="+str(bandwidth)+" buffersize="+str(buffersize)+" coding_rate="+str(coding)+" preamble="+str(preamble)+" tx_power="+str(power))
-		print("éméteur lancement transfer")
+		displayParam("Recepteur")
 
 		try:
 			#on l'ance le programe de reception
 			receptionLora.Rcv.__init__(bandwidth,sf,buffersize,preamble,"azer.txt",power,coding,timeout,maxretry)
-
 		#si on  a  une exeption exit  (fait par trop  de retry )
 		except SystemExit as detaille:
 			print("Exeption Exit "+str(detaille))
