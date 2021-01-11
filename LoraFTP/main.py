@@ -11,7 +11,10 @@ pycom.heartbeat(False)
 machineA=b'\x80}:\xc2\xec\xf0'
 machineB=b'\x80}:\xc3F`'
 
-##initialisation pour  que  ça  run  mais ces  par  défaut  nbormalent
+lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=1,preamble=10, sf=12,tx_power=20,coding_rate=1)#définition dun truc
+s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
+
+##déclaration  pour que les  fonction fonctionne
 coding=1
 bandwidth=1
 sf=7
@@ -21,9 +24,21 @@ power=15
 timeout=0.5
 maxretry=15
 
-s.settimeout(None)#int(str(machine.rng())[:4])/2000
+#purger les  sockete
+def purge():
+	import socket# WTFFF   ? ? ? ? ??  ?  ?? ? *w*
+	global s, lora #  why not   UwU
+	#on Redéfinie le lora a chaque  foit  pour  écraser la dernierre  fonction
+	lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=1,preamble=10, sf=12,tx_power=20,coding_rate=1)#définition dun truc
+	s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type
+	#on  va purge  en  vidant
+	s.setblocking(False)
+	purgetemp=s.recv(buffersize)
+	while purgetemp!=b'':
+		purgetemp=s.recv(buffersize)
+	s.setblocking(True)
 
-
+#fonction Permétant d'envoiller un  message est  de  retourner le message  reçus
 def sendACK(vara):
 	i=0
 	while True:
