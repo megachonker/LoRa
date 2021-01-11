@@ -13,11 +13,7 @@ from sys import exit 	#sortie  personaliser
 class Send:
 
 	def __init__(self,bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='img.py',power=14,coding=1,timeout=0.5,maxretry=10):
-		#super(Send, self).__init__()
-		#self.arg = arg
 
-		#buffersize=64 #taille  du  buffer  de récéption
-		# lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_500KHZ,preamble=5, sf=7)#définition dun truc
 		lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=bandwidth,preamble=preamble, sf=sf,tx_power=power,coding_rate=coding)#définition dun truc
 		#print("bandwidth="+str(bandwidth)+"preamble="+str(preamble)+"sf="+str(sf)+"tx_power="+str(power)+"coding_rate="+str(coding))
 		print("PARAMETRE EMETEUR")
@@ -55,7 +51,6 @@ class Send:
 					time.sleep(0.1)# UTILE ?
 					if(i==maxretry):
 						exit("connexion  perdu")
-			return retour
 
 		def sendACKvrf(data, match):
 			while True:
@@ -87,73 +82,85 @@ class Send:
 			print("trame a renvoiller récéptioner :",indexToSend)
 			#return True
 
+		def resizevar(nbtrame):
+			global tvar,tVarType,playloadsize,stVarIndex
+			if nbtrame<256:
+				tvar=1
+				tVarType="B"
+				playloadsize=str(buffersize-tvar)
+				stVarIndex=tVarType+playloadsize
+			elif (nbtrame<65536):
+				tvar=2
+				tVarType="H"
+				playloadsize=str(buffersize-tvar)
+				stVarIndex=tVarType+playloadsize
+			else:
+				tvar=4
+				tVarType="L"
+				playloadsize=str(buffersize-tvar)
+				stVarIndex=tVarType+playloadsize
 
 		#initialisation de la map de donnée
-		dataMap=[]
-		f = open(fichier, 'rb')
-		stringToHash=var=b''
-		sizefile=os.stat(fichier)[6]
+		indexToSend=[]
+		def datamapinit():
+			nonlocal indexToSend
+			global dataMap
+			dataMap=[]
+			stringToHash=var=b''
+			#on  ouvre le fichier
+			f = open(fichier, 'rb')
+			#la  taille  du fichier a  envoiller
+			sizefile=os.stat(fichier)[6]
+			#on déduit le type de  variable a  utiliser en fonction du  nombre de trame total
+			resizevar(sizefile/(buffersize-1))
+			#déduit la  taille  de n otre tableaux
+			global lenDatamap
+			lenDatamap=sizefile//(buffersize-tvar)+1
+			#on génère notre dataMap
+			while True:
+				var=f.read(buffersize-tvar)
+				if (var==b''):
+					break
 
-		#on déduit le type de  variable a  utiliser en fonction du  nombre de trame total
-		if sizefile/(buffersize-1)<256:
-			tVarIndex="B" #a  enlever qqd ça marhce
-			stVarIndex="B"+str(buffersize-1)
-			sVarIndex=1
-		elif sizefile/(buffersize-2) < 65536:
-			tVarIndex="H"
-			stVarIndex="H"+str(buffersize-2)
-			sVarIndex=2
-		else:
-			tVarIndex="L"
-			stVarIndex="L"+str(buffersize-4)
-			sVarIndex=4
+				#pour que la fin  du fichier soit fill avec des 0 pour un checksum correct
+				ajouter=(buffersize-tvar)-len(var)
+				if ajouter!=0:
+					var+=ajouter*b'\x00'
 
-		lenDatamap=os.stat(fichier)[6]//(buffersize-sVarIndex)+1
-
-
-		#on génère notre dataMap
-		while True:
-			var=f.read(buffersize-sVarIndex)
-			if (var==b''):
-				break
-
-			#pour que la fin  du fichier soit fill avec des 0 pour un checksum correct
-			ajouter=(buffersize-sVarIndex)-len(var)
-			if ajouter!=0:
-				var+=ajouter*b'\x00'
-
-			dataMap.append(var)
-			stringToHash+=var
-
-		if (len(dataMap)!=lenDatamap):
-			print("Erreur  taille  datamap")
-			print("len(dataMap)",str(len(dataMap)))
-			print("lenDatamap",str(lenDatamap))
-
-
-		#on va  hasher  datamap
-		m = hashlib.sha256()
-		m.update(stringToHash)
-
+				dataMap.append(var)
+				stringToHash+=var
 
 			if (len(dataMap)!=lenDatamap):
 				print("Erreur  taille  datamap")
 				print("len(dataMap)",str(len(dataMap)))
 				print("lenDatamap",str(lenDatamap))
 
+			#on va  hasher  datamap
+			global mhashed
+			mhashed = hashlib.sha256()
+			mhashed.update(stringToHash)
 
-		###initialisation d'un tableaux qui va lister tout les chunk de data
-		#indexToSend[0,1,2,3,4,5,6,7,8,9]
-		indexToSend=[]
-		for number in range(lenDatamap):
-			indexToSend.append(number)
+			###initialisation d'un tableaux qui va lister tout les chunk de data
+			#indexToSend[0,1,2,3,4,5,6,7,8,9]
+			#global indexToSend
+			indexToSend=[]
+			for number in range(lenDatamap):
+				indexToSend.append(number)
 
-		#send du nombre de trame
+		#MAIN
+		purge()
+		datamapinit()
 		print("send demande de communiquation et annonce de ",str(lenDatamap)," trame a envoiller")
+		#send du nombre de trame
 		#on va  utiliser le smiller OwO  pour  taguer qu'on est bien  sur  une  trame qui  annonce la  longeur
 		#on  verrifie que la valeur envoilkler est bien la  valleur recus
+			# sendACKvrf(pack('L3s32s',lenDatamap,b'OwO',m.digest()),str(lenDatamap))
+		sendACKvrf(pack('L3s32s',lenDatamap,b'OwO',mhashed.digest()),str(lenDatamap))
 
-		purge() ##verifier si utile ?
+		# if (str(sendACK(pack('L3s32s',lenDatamap,b'OwO',mhashed.digest())))==str(lenDatamap)):
+		# 	pass
+		# else:
+		# 	print("erreur de trame")
 
 		print("début de transmition")
 		while len(indexToSend)!=0:
