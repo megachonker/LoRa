@@ -12,13 +12,13 @@ voire  l'impacte de la  distance est des  différante modulation  sure ce débit
 - Fiabilitée ✔
   - Detection des trame perdu ✔
   - Retransmition trame perdu ✔
-  - Crash ✘ (Rare)
+  - Crash ✘ (Très Rare)
 - Intégritée de la playload Recepteur ✔
   - Controlle d'intégritée ✔
   - Correction erreur ✘ (recherche si packet corrompu ou bug algo)
 - Portage sur librairie ✘ (pour les benchmark)
   - Lancement transfère avec  paramètre ✔
-  - Syncronisation des paramètre ✘
+  - Syncronisation des paramètre ✔ (théorique)
   - Output JSON ✘
 
 ## Objectif future
