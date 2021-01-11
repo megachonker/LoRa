@@ -112,31 +112,8 @@ def run():
 			receptionLora.Rcv.__init__(bandwidth,sf,buffersize,preamble,"azer.txt",power,coding,timeout,maxretry)
 
 		#si on  a  une exeption exit  (fait par trop  de retry )
-		except SystemExit as e:
-			#on  abolis d'exeption
-			print("exeption "+str(e))
-
-
-		# #attend j'usqua un  message ||durré d'un transfer au pire
-		# #on attend j'usqua 30 second une rep concluante
-		# s.settimeout(30)
-		# #on verifie que ça soit pas une interférance
-		# avar=""
-		# while avar!= b'tla?':
-		# 	print("en  attante  de trame")
-		# 	#si timed out  l'erreur remonte j'usqaux main benchmark
-		# 	avar=s.recv(64)
-		# 	print(avar)
-		# #si l'on recois le bon  message on va dire au  module  oposer  que nous somme  la
-		# 	#30 foit
-		# for a in range(10):
-		# 	print("jesuisal")
-		# 	s.send("jesuisla")
-		# #Puisque nous avon s  reçus un  des 30 message  nous parton du  principe que nous avonc 50% de chance si ces le dernier message  que l'on avais  reus que l'autre reçois
-		# 	#si on a reçus un des 30 message ça marche dansles 2 sens
-		# #on   part du principe qu'il en a reçus au moin UN !
-		# print("la  reception ces  bien  derouler")
-
+		except SystemExit as detaille:
+			print("Exeption Exit "+str(detaille))
 
 #Bande passante
 # 2 = LoRa.BW_500KHZ
@@ -150,17 +127,13 @@ def run():
 # 2 = LoRa.CODING_4_6
 # 3 = LoRa.CODING_4_7
 # 4 = LoRa.CODING_4_8
-	#	Default	coding = 1
 
 #Puissance d'émition en DBm
 # tx_power  2 - 20
-	#	Default  power=14
-
-#SF  7-12     12 plus faible debit
-	#	Default sf=7
 
 #preamble nombre signe de  syncro
-	#	Default  preamble=8
+#[8]
+#0-infinit
 
 # coding=1
 # bandwidth=0
@@ -179,30 +152,33 @@ Dpower=15
 timeout=0.5
 maxretry=10
 
+#implémentée les  tableaux  pour  l'interface  graphique
+#	   choisie
+#		 |  max
+#		 |   |	step
+#		 |	 |	 |
+#buffer=[64,257,64]
+
 
 #si  desincro  ces  la  mort !
+#test toute  les  possibilitée
 def benchmark():
 	for power in range(Dpower,2,-1):
-		# print("power: "+str(power), end=', ')
 		for preamble in range(Dpreamble,0,-1):
-			# print("preamble: "+str(preamble), end=', ')
 			for coding in range(Dcoding,5):
-				# print("coding: "+str(coding), end=', ')
 				for buffersize in range(Dbuffersize,257,64):#256
-					# print("buffersize: "+str(buffersize), end=', ')
 					for bandwidth in range(Dbandwidth,3):
-						# print("bandwidth: "+str(bandwidth), end=', ')
 						for sf in range(Dsf,6,-1):
-							# print("sf: "+str(sf)+"Start  RUN
-							print("sf="+str(sf)+" bandwidth="+str(bandwidth)+" buffersize="+str(buffersize)+" coding_rate="+str(coding)+" preamble="+str(preamble)+" tx_power="+str(power))
+							#displayParam("Main")
+							purge()
 							run()
-benchmark()
-while True:
-	try:
-		print("on  veux benchmark ?")
-		benchmark()
-		print("redemarage du bench ! ")
 
+
+#REAL MAIN :
+while True:
+	print("Lancement du benchmark")
+	try:
+		benchmark()
 	#pour  la partie  reception
 	except OSError as socket:
 		print("Main plus de connection "+str(socket))
