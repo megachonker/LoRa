@@ -62,6 +62,24 @@ class Rcv:
 
 		arrayStat=[]
 
+		#on déduit le type de  variable a  utiliser en fonction du  nombre de trame total
+		def resizevar(nbtrame):
+			global tvar,tVarType,playloadsize ,stVarIndex
+			if nbtrame<256:
+				tvar=1
+				tVarType="B"
+				playloadsize=str(buffersize-tvar)
+				stVarIndex=tVarType+playloadsize
+			elif (nbtrame<65536):
+				tvar=2
+				tVarType="H"
+				playloadsize=str(buffersize-tvar)
+				stVarIndex=tVarType+playloadsize
+			else:
+				tvar=4
+				tVarType="L"
+				playloadsize=str(buffersize-tvar)
+				stVarIndex=tVarType+playloadsize
 
 		#Fonction Appeler a chaque foit que l'on doit traiter un  packet
 		def unboxing(rawtram):
@@ -275,10 +293,9 @@ class Rcv:
 				temp=b''
 
 				#je  crée  une  trame  qui  sera  égale  a la taille  du buffer ou inferieure  tant qu'il  me   reste des valeur  a y metre
-				##	  i<(buffersize/2) #mieux ? ###########################
-				while i<32 and len(indexManquetosend):
+				while i<(buffersize/tvar) and len(indexManquetosend):
 					#je rajoute de nouveaux Idex de trame  manquante  a ma trame  éxistante
-					temp+=pack('H',indexManquetosend[0])
+					temp+=pack(tVarType,indexManquetosend[0])
 					#je  suprime  la valeur  ajouter
 					indexManquetosend.pop(0)
 					i+=1
@@ -294,10 +311,10 @@ class Rcv:
 			#on envoit une  trame  pour  trigguer l'éméteur pour qu'il  passe  en  mode émition  et on traite  la premierre valeur reçus
 			###metre  un  time  out a  l'éméteur
 
-
 			#on commence  la  reception qqd  on est  sur d'avoir  du  binaire
 			tmpp=b'indexFIN'
 			while tmpp==b'indexFIN':
+				#print(tmpp)#debug
 				tmpp=sendACK("GO")
 				#print(tmpp)#debug
 			print("Début de la rerectption")
