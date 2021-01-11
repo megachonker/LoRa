@@ -11,9 +11,7 @@ import hashlib			#fait des hash
 from sys import exit 	#sortie  personaliser
 
 class Send:
-	"""docstring for Send"""
-	def MABITE():
-		print("HE  FUCKING   HUGE")
+
 	def __init__(self,bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='img.py',power=14,coding=1,timeout=0.5,maxretry=10):
 		#super(Send, self).__init__()
 		#self.arg = arg
@@ -21,15 +19,15 @@ class Send:
 		#buffersize=64 #taille  du  buffer  de récéption
 		# lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_500KHZ,preamble=5, sf=7)#définition dun truc
 		lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=bandwidth,preamble=preamble, sf=sf,tx_power=power,coding_rate=coding)#définition dun truc
-		print(lora.stats())
-		print("bandwidth="+str(bandwidth)+"preamble="+str(preamble)+"sf="+str(sf)+"tx_power="+str(power)+"coding_rate="+str(coding))
+		#print("bandwidth="+str(bandwidth)+"preamble="+str(preamble)+"sf="+str(sf)+"tx_power="+str(power)+"coding_rate="+str(coding))
+		print("PARAMETRE EMETEUR")
 		print("bandtith"+str(lora.bandwidth())+"preamble"+str(lora.preamble())+"sf"+str(lora.sf())+"tx_power"+str(lora.tx_power())+"coding_rate"+str(lora.coding_rate()))
 
 		s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
 		f = open(fichier, 'rb')#on va ouvrire l'image qui port l'extention .py (pycom n'axepte pas  des fichier de format image)
 
 		s.setblocking(True)#on dit que l'écoute ou l'envoit bloque le socket
-		s.settimeout(timeout) #temps  a attendre avant de  considérer une trame  comme perdu ==> DOIT ETRE BC  PLUS COURT ! ! ! ! ! quelque  MS
+		s.settimeout(timeout) #trouver un opotimal
 
 
 		#purger les  sockete
@@ -47,13 +45,14 @@ class Send:
 			while True:
 				i+=1
 				s.send(vara)
-				print("ACK Envoit: "+str(vara))
+				print("ACK Envoit: "+str(vara), end='')
 				try:
 					retour=s.recv(buffersize)
-					#print("ack Reçus")
-					break
+					print(" =>"+str(retour))
+					return retour
 				except OSError as socket :
-					print("ACK timeout n° ",i)
+					print(" => timeout n° ",i)
+					time.sleep(0.1)# UTILE ?
 					if(i==maxretry):
 						exit("connexion  perdu")
 			return retour
@@ -62,16 +61,12 @@ class Send:
 			while True:
 				mydata=sendACK(data)
 				if(type(match)==bytes):
-					#print("ACKvfr type  = bytes")
 					if mydata == match:
-						#print("ACKvfr break")
 						break
 					else:
 						print("ACKvfr attendue :  ", match, " type byte reçus", mydata)
 				if(type(match)==str):
-					#print("ACKvfr type  = str")
 					if mydata == match.encode() :
-						#print("ACKvfr break")
 						break
 					else:
 						print("ACKvfr attendue :  ", match.encode(), " type str reçus", mydata)
@@ -141,8 +136,11 @@ class Send:
 		m.update(stringToHash)
 
 
+			if (len(dataMap)!=lenDatamap):
+				print("Erreur  taille  datamap")
+				print("len(dataMap)",str(len(dataMap)))
+				print("lenDatamap",str(lenDatamap))
 
-		# print("array contenant les data maper:")
 
 		###initialisation d'un tableaux qui va lister tout les chunk de data
 		#indexToSend[0,1,2,3,4,5,6,7,8,9]
@@ -152,22 +150,12 @@ class Send:
 
 		#send du nombre de trame
 		print("send demande de communiquation et annonce de ",str(lenDatamap)," trame a envoiller")
-
 		#on va  utiliser le smiller OwO  pour  taguer qu'on est bien  sur  une  trame qui  annonce la  longeur
 		#on  verrifie que la valeur envoilkler est bien la  valleur recus
 
 		purge() ##verifier si utile ?
 
-					##pack('H3s32s'
-				#utiliser  un  sendACKvrf ??
-		# sendACK(pack('L3s32s',lenDatamap,b'OwO',m.digest()),str(lenDatamap))
-
-		if (str(sendACK(pack('L3s32s',lenDatamap,b'OwO',m.digest())))==str(lenDatamap)):
-			print("Nombre de trame OK")
-		else:
-			print("erreur de trame")
-
-		print("sucès début de transmition")
+		print("début de transmition")
 		while len(indexToSend)!=0:
 			chargement=len(indexToSend)
 			for notrame in range(len(indexToSend)):
@@ -179,6 +167,7 @@ class Send:
 
 			#on  flush  la  variable  qui stoque  la  précédante  session  d'index a  send
 			indexToSend=[]
+
 			#on verifi qu'il y a encore  des data
 			indextrame=sendACK("STOP")
 			if (indextrame == b'FinTransmition'):
@@ -190,6 +179,7 @@ class Send:
 			while True:
 				#on  va  décomposer la  trame est l'ajouter  a  la  bd
 				AddToIndexToSend(indextrame)
+				print("debug  idex"+str(indextrame))
 				indextrame = sendACK("indexOKforNext")
 
 
@@ -197,18 +187,14 @@ class Send:
 				if (indextrame == b'FinTransmition'):
 					break
 
-
-
 				#indextrame=s.recv(buffersize)
-				# s.settimeout(timeout)###########  Besoin de désincroniser pour que A ecoute et B parle
-				print("INFO TrameListe reçus",indextrame)# # DEBUGage
+				#print("INFO TrameListe reçus",indextrame)# # DEBUGage
 
 				if (indextrame == b'STOPliste'):
-					print("Attente confirmation du  de stop  d'envoit trame")
+					#print("Attente confirmation du  de stop  d'envoit trame")
 					sendACKvrf("indexFIN","GO")
-					print("SINKRO")
+					#print("SINKRO")
 					break
 
-		print("toute numero de  chunck a renvoiller recus:")
-		print(indexToSend)
-		print("sortie!")
+		print("Upload terminer !")
+		
