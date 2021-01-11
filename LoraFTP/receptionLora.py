@@ -1,16 +1,18 @@
-from network import LoRa #pour etre en mode LoRa
-import socket # pour lire les message recus
-import time # pour la gestion des temps d'attente
-import os #gestion de  fichier
-import struct  #gestion des  structure  de  trame  sert  notament a  aranger des donnnée dans une suite de type  binaire
-from struct import * ##verifier si ces utile
+#!/usr/bin/env python
 #on  importe un  librarie  qui  va permetre  de  trier  des tableaux de  turple
-#librérie  ou j'ai  du  retirer des  fonction  de  python  3.7 pour l'adapter sur lopy 2.7
+#lib ou j'ai  du  retirer des  fonction  de  python  3.7 pour l'adapter sur lopy 2.7
 #de ce fait  je pourait la simplifier  au stricte minimum donc a voir  .....
 from operator import itemgetter#, attrgetter
-import hashlib
+import gps				#permet d'utiliser le gps
 
-import gps
+from network import LoRa# pour etre en mode LoRa
+import socket 			# gestion des socket de lora
+import time 			# gestion temps Débit Crono etc
+import os 				# gestion de  fichier
+import hashlib			# permet  d'utiliser des  fonction de hashage
+from sys import exit 	#permet de d'envoiler des  signal de sortie
+import struct  			# gestion des  structure  de  trame  sert  notament a  aranger des donnnée dans une suite de type  binaire
+from struct import * 	# IDK
 
 from sys import exit
 

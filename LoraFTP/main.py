@@ -1,13 +1,11 @@
-import machine
-import os
-import time
-#pour gestion  des  message
-from network import LoRa #pour être en mode LoRa
-import socket #pour envoyer des trames
-#pour  les  signial  de sortie
-from sys import exit
-import pycom
-##Juste pour pouvoire  mieux dormire la  nuit et pas  avoire des   sapin de  noel  en   continue  !
+#!/usr/bin/env python
+import machine 			#pour avoir les ID et de l'aléatoir
+import os 				# IDK
+import time 			# IDK
+from network import LoRa#pour géré le module lora
+import socket 			#pour envoyer des trames
+from sys import exit 	#Gestion des signial
+import pycom			#Pour Mieux dormire la nuit DIsable Blink  !
 pycom.heartbeat(False)
 
 machineA=b'\x80}:\xc2\xec\xf0'

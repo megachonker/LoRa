@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 #script permettant de transferer  un fichier
 
-from network import LoRa #pour être en mode LoRa
-import socket #pour envoyer des trames
-import time # pour la gestion du timer
-import struct
-from struct import *
-import os
-import hashlib
-from sys import exit
+from network import LoRa#pour être en mode LoRa
+import socket 			#pour envoyer des trames
+import time 			# pour la gestion du timer
+import struct			#permet d'utiliser  une  structure sur  du  binaire
+from struct import *	# IDK
+import os 				#  IDK
+import hashlib			#fait des hash
+from sys import exit 	#sortie  personaliser
 
 class Send:
 	"""docstring for Send"""
