@@ -14,23 +14,21 @@ from sys import exit 	#permet de d'envoiler des  signal de sortie
 import struct  			# gestion des  structure  de  trame  sert  notament a  aranger des donnnée dans une suite de type  binaire
 from struct import * 	# IDK
 
-from sys import exit
 
-
-#
 class Rcv:
 
 	#constructeur dpar défault
 	def __init__(bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='azer.txt',power=14,coding=1,timeout=0.5,maxretry=10):
 
-		# fichier='azer.txt'
-		# buffersize=64
-		#buffersize=64 #taille  du  buffer  de récéption
-		# lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=LoRa.BW_500KHZ,preamble=5, sf=7)#définition dun truc
-		lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=bandwidth,preamble=preamble, sf=sf,tx_power=power,coding_rate=coding)#définition dun truc
-		s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
-		print(lora.stats())
-		print("bandwidth="+str(bandwidth)+"preamble="+str(preamble)+"sf="+str(sf)+"tx_power="+str(power)+"coding_rate="+str(coding))
+		#on initialise la carte  lora
+		lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=bandwidth,preamble=preamble, sf=sf,tx_power=power,coding_rate=coding)
+		#définition d'un socket réseaux de type lora
+		s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
+
+		#debug
+		#print(lora.stats())
+		#print("bandwidth="+str(bandwidth)+"preamble="+str(preamble)+"sf="+str(sf)+"tx_power="+str(power)+"coding_rate="+str(coding))
+		print("PARAMETRE RECEPTEUR")
 		print("bandtith"+str(lora.bandwidth())+"preamble"+str(lora.preamble())+"sf"+str(lora.sf())+"tx_power"+str(lora.tx_power())+"coding_rate"+str(lora.coding_rate()))
 
 		# #ne pouvant avoir une résolution en  dessou de  la  seconde  sans passer  par des  tick ces mort
@@ -56,10 +54,6 @@ class Rcv:
 		stVarIndex = tVarIndex = ""
 		indexManque=[]
 		indexRecieve=[]
-		stVarIndex=""
-		tVarIndex=""
-		playloadsize=0 #autodetect
-
 		arrayStat=[]
 
 		#on déduit le type de  variable a  utiliser en fonction du  nombre de trame total
@@ -83,11 +77,10 @@ class Rcv:
 
 		#Fonction Appeler a chaque foit que l'on doit traiter un  packet
 		def unboxing(rawtram):
-
-			#on verifie si on peut umpack la trame
+			global arrayStat
+			#on verifie si on peut unpack la trame:
 			try:			#"H"+str(buffersize-2)
-				unpackted=unpack(stVarIndex+"s", rawtram)#on stoque la data qui est dans un  tuple dans une variable
-
+				unpackted=unpack(stVarIndex+"s", rawtram)#on stoque la data qui est dans un tuple dans une variable
 			except ValueError:#OSError
 				print("Unboxing: raw: "+str(rawtram))
 			else:
@@ -107,7 +100,8 @@ class Rcv:
 						#on archive le packet recus
 						indexRecieve.append(unpackted)
 						#caclule en%  des trame perdu #####peut être  opti
-						print("packet  perdu  "+str(lostpacket(unpackted[0]))+"%")
+						pourcentperdu=lostpacket(unpackted[0])
+						print("packet  perdu  "+str(pourcentperdu)+"%")
 						#on  suprime  le  packet  de la  liste de  packet a  renvoiller
 						indexManque.remove(unpackted[0])
 						#on archive
@@ -130,7 +124,7 @@ class Rcv:
 			while True:
 				i+=1
 				s.send(vara)
-				print("ACK Envoit: "+str(vara))
+				print("ACK Envoit: "+str(vara), end='')
 				try:
 					retour=s.recv(buffersize)
 					print(" =>"+str(retour))
@@ -190,44 +184,37 @@ class Rcv:
 					# on referme le fichier proprement
 			fout.close()
 
+		def whaitmetadata():
+			global nbtrame, checksum
+			print("Attente Trame Datalenght")
+			s.settimeout(10)##EXPERIMENTAL POUR PAS BLOQUER
+			#pour définire nbtrame  on va  accepter que les  trame  étant sur 1 octée en Long
+			varnul=0
+			while True:
+				mytrame=s.recv(buffersize)
+				try:
+					nbtrame=unpack('L3s32s',mytrame)
+				except Exception as e:
+					print("INITIALISATION: nombretrame err : Trame Non  attendue",str(mytrame))
+					varnul+=1
+					if(varnul==maxretry):
+						exit("connexion  perdu")
+				else:
+					if nbtrame[1]==b'OwO':
+						checksum=nbtrame[2]
+						nbtrame=nbtrame[0]
+						break
+			print("nombre de trame", str(nbtrame))
+			s.settimeout(timeout)
+			return nbtrame
+
+		#MAIN !
 
 		#purge le buffer au  cas ou
 		purge()
-
-		s.settimeout(10)##EXPERIMENTAL POUR PAS BLOQUER
-		#pour définire nbtrame  on va  accepter que les  trame  étant sur 1 octée en Long
-		varnul=0
-		while True:
-			try:
-				nbtrame=unpack('L3s32s',s.recv(buffersize))
-				if nbtrame[1]==b'OwO':
-					checksum=nbtrame[2]
-					nbtrame=nbtrame[0]
-					break
-			except Exception as e:
-				print("INITIALISATION: nombretrame err : Trame Non  attendue",str(nbtrame))
-				varnul+=1
-				if(varnul==maxretry):
-					exit("connexion  perdu")
-		print("nombre de trame", str(nbtrame))
-
-		s.settimeout(timeout)
-
-		#on déduit le type de  variable a  utiliser en fonction du  nombre de trame total
-		if nbtrame<256:
-			tVarIndex="B"
-			stVarIndex="B"+str(buffersize-1)
-			playloadsize=str(buffersize-1)
-		elif (nbtrame<65536):
-			tVarIndex="H"
-			stVarIndex="H"+str(buffersize-2)
-			playloadsize=str(buffersize-1)
-		else:
-			tVarIndex="L"
-			stVarIndex="L"+str(buffersize-4)
-			playloadsize=str(buffersize-1)
-
+		nbtrame=whaitmetadata()
 		print("nombre  de  trame  out "+str(nbtrame))
+		resizevar(nbtrame)
 
 		#génération d'un  tableaux qui contien toute les trame
 		for number in range(int(nbtrame)):
