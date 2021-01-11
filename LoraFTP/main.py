@@ -76,11 +76,7 @@ def sendACKvrf(data, match):
 				return True
 			else:
 				print("ACKvfr attendue :  ", match.encode(), "str reçus", supertruc)
-	return True
 
-def run():
-	lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, bandwidth=1,preamble=10, sf=12,tx_power=20,coding_rate=1)#définition dun truc
-	s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)#définition d'un socket réseaux de type lora
 
 def displayParam(var):
 	print("MAIN parametre du "+var+":")
@@ -106,6 +102,7 @@ def run():
 		except SystemExit as detaille:
 			print("Exeption Exit "+str(detaille))
 
+	#Ce que  effectura Le Récépteur
 	if machineB == machine.unique_id():
 		import receptionLora
 		s.settimeout(None)#int(str(machine.rng())[:4])/2000
