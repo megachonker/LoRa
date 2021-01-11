@@ -19,9 +19,8 @@ from sys import exit
 
 #
 class Rcv:
-	"""docstring for Send"""
 
-
+	#constructeur dpar défault
 	def __init__(bandwidth=0, sf=7, buffersize=64, preamble=8, fichier='azer.txt',power=14,coding=1,timeout=0.5,maxretry=10):
 
 		# fichier='azer.txt'
@@ -35,6 +34,7 @@ class Rcv:
 		print("bandtith"+str(lora.bandwidth())+"preamble"+str(lora.preamble())+"sf"+str(lora.sf())+"tx_power"+str(lora.tx_power())+"coding_rate"+str(lora.coding_rate()))
 
 		# #ne pouvant avoir une résolution en  dessou de  la  seconde  sans passer  par des  tick ces mort
+		# Tick dépandant de la charge cpu  :O
 		# ltime=int()
 		# def crono():
 		# 	global ltime
@@ -43,19 +43,17 @@ class Rcv:
 		# 	ltime=b
 		# 	return out
 
-		#fonction  permetant de vider  le buffer  qui peut poser  des soucis RArement mais  ça peut vite  être contrégniant dans le cas échéant
+		#fonction  permetant de vider  le buffer  qui peut poser  des soucis RArement mais ça peut vite  être contrégniant dans le cas échéant
 		def purge():
-			#purger les  sockete
 			s.setblocking(False)
 			purgetemp=s.recv(buffersize)
 			while purgetemp!=b'':
 				purgetemp=s.recv(buffersize)
 			s.setblocking(True)
 
-
-		#declaration
-		startAt=0
-		nbtrame=0
+		#MES Déclaration xD
+		startAt = playloadsize = nbtrame = 0
+		stVarIndex = tVarIndex = ""
 		indexManque=[]
 		indexRecieve=[]
 		stVarIndex=""
@@ -65,6 +63,7 @@ class Rcv:
 		arrayStat=[]
 
 
+		#Fonction Appeler a chaque foit que l'on doit traiter un  packet
 		def unboxing(rawtram):
 
 			#on verifie si on peut umpack la trame
@@ -74,13 +73,12 @@ class Rcv:
 			except ValueError:#OSError
 				print("Unboxing: raw: "+str(rawtram))
 			else:
-				#pour le premier tour  on empege une division par zero
+				#pour le premier tour  on ampeche une division par zero
 				totaltemp=time.time()-startAt
 				if totaltemp == 0:
 					totaltemp=1
 				totaldata=(len(indexRecieve)+1)*int(playloadsize)
 
-				# arrayStat.append((unpackted[0], (totaldata/totaltemp), time.time(), gps.coord,lora.stats()[1], lora.stats()[2]))
 				print("Unboxing: chunk "+str(unpackted[0])+" Download: "+str((len(indexRecieve)+1)/nbtrame*100)+"% débit moyen: "+str(totaldata/totaltemp)+"octée/s "+"position: "+str(gps.coord)+" power reçus "+str(lora.stats()[1])+"dBm, SNR: "+str(lora.stats()[2])+"dB ",  end='')
 
 				#pour  verifier si  un  packet DOUBLON OU est malformer  on verifi  que l'index  existe  bien
@@ -94,6 +92,8 @@ class Rcv:
 						print("packet  perdu  "+str(lostpacket(unpackted[0]))+"%")
 						#on  suprime  le  packet  de la  liste de  packet a  renvoiller
 						indexManque.remove(unpackted[0])
+						#on archive
+						#arrayStat.append((unpackted[0], (totaldata/totaltemp), time.time(), gps.coord,lora.stats()[1], lora.stats()[2]),pourcentperdu)
 					except ValueError:
 						#debug value
 						print("List des  packet a receptioner ",str(indexManque))
@@ -115,15 +115,13 @@ class Rcv:
 				print("ACK Envoit: "+str(vara))
 				try:
 					retour=s.recv(buffersize)
-					#print("ack Reçus")
-					break
+					print(" =>"+str(retour))
+					return retour
 				except OSError as socket :
-					print("ACK timeout n° ",i)
-					time.sleep(0.1)
+					print(" => timeout n° ",i)
+					time.sleep(0.1)# UTILE ?
 					if(i==maxretry):
 						exit("connexion  perdu")
-			#s.setblocking(True)
-			return retour
 
 
 		def sendACKvrf(data, match):
@@ -175,7 +173,6 @@ class Rcv:
 			fout.close()
 
 
-		print("Attente Trame Datalenght")
 		#purge le buffer au  cas ou
 		purge()
 
@@ -212,26 +209,25 @@ class Rcv:
 			stVarIndex="L"+str(buffersize-4)
 			playloadsize=str(buffersize-1)
 
+		print("nombre  de  trame  out "+str(nbtrame))
 
 		#génération d'un  tableaux qui contien toute les trame
 		for number in range(int(nbtrame)):
 			indexManque.append(number)
 
-
-		print("envoit d'un  ackitement")
 		#Unboxing de la premierre trame de donnée qui fait office d'ackitment
-		purge()
-		startAt=time.time()
+		print("envoit d'un  ackitement")
 		unboxing(sendACK(str(nbtrame)))
-
 
 		print("démarage reception")
 		startAt=time.time()
 		#je  demande explicitement d'écouter j'usqua se que je  recois une trame
 		s.setblocking(True)
+
+		#while qui  va  ce  répétée j'usqua la fin du  transfer
 		while True:
 
-			#tant que l'éméteur veux envoiller des donnée
+			#while  utiliser pour cette partie des donnée
 			while True:
 				#je  reçois ma trame
 				##experimentale
@@ -241,22 +237,21 @@ class Rcv:
 
 				#quand l'éméteur  a fini ENvoit de  stop pour  passer a la partie suivante
 				if trame==b'STOP':
-					print("fin de flux reçus  !")
-					#s.send("OK")
+					#print("fin de flux reçus  !")
 					break
 				#sinon on traite la trame normalement
 				else:
 					#on va traiter la  trame  recus
 					unboxing(trame)
 
-			print("Packet perdu"+str(len(indexManque)/(len(indexRecieve)+len(indexManque))*100)+"%")
+			#estimation  des packet  perdu DEBUG
+			#print("Packet perdu"+str(len(indexManque)/(len(indexRecieve)+len(indexManque))*100)+"%")
 
 			#si il  n'y a plus de trame manquante
 			if(len(indexManque)==0):
 				print("plus de trame manquante.")
-				#sendACK("STOP")
 				#on va indiquer a l'éméteur que ces fini
-				s.send("STOP")
+				s.send("STOP") #safe ??
 				#on sort de toute mes boucle  affain  de  passer a  au  trie  des data
 				break
 
@@ -270,7 +265,7 @@ class Rcv:
 			#on copy explicitement le  précédant tableaux dans un  nouveaux
 			indexManquetosend=indexManque.copy()
 
-			time.sleep(0.250)
+			time.sleep(0.250) #utile ?
 
 			#tant qu'il reste des trame dans la liste TEMPORAIRE des trame qui  manque
 			while len(indexManquetosend):
@@ -289,13 +284,13 @@ class Rcv:
 					i+=1
 				#je  m'assurt  que l'éméteur a  bien recus la  trame  qu'il  a recus  est qu'il n'es pas  perdu  [utile quand je chercherer a débusquer les trame  malformer]
 				sendACKvrf(temp,"indexOKforNext")#######a la place de indexOk peut metre un ckecksum
-				print("INDEXE echangée  "+str(i)+" liste des chunck")
+				#print("INDEXE echangée  "+str(i)+" liste des chunck")  DEBUG
 			#on envoit a  l'éméteur un  signial  indiquant qu'il n'y a plus  de  trame a  envoiller est on verifi qu'il  est bien sincro
 
-			print("on STOP la l'émition")
+			#on STOP la l'émition
 			sendACKvrf("STOPliste","indexFIN")
-			print("liste  trame manquante bien  réceptioner") ##  ligne 160  et  163 redondante ?
-			print(indexManque)
+			print("liste  trame manquante bien  réceptioner")
+
 			#on envoit une  trame  pour  trigguer l'éméteur pour qu'il  passe  en  mode émition  et on traite  la premierre valeur reçus
 			###metre  un  time  out a  l'éméteur
 
@@ -303,13 +298,11 @@ class Rcv:
 			#on commence  la  reception qqd  on est  sur d'avoir  du  binaire
 			tmpp=b'indexFIN'
 			while tmpp==b'indexFIN':
-				print(tmpp)#debug
 				tmpp=sendACK("GO")
-				print(tmpp)#debug
+				#print(tmpp)#debug
+			print("Début de la rerectption")
 			unboxing(tmpp)
 
-			print("début de la rerectption")
-####
 
 		print("récéption terminer:")
 
@@ -317,14 +310,14 @@ class Rcv:
 		s.setblocking(False)
 		s.send("FinTransmition")
 		s.send("FinTransmition")
-		s.send("FinTransmition")
+		s.send("FinTransmition")#safe?
 
 		stopAt=time.time()
 
 		print("trie:")
+
 		#on va trier  en fonction  du  1er élémenet du tuple du tableaux
 		indexRecieve.sort(key=itemgetter(0))
-		#print(indexRecieve)
 
 		datafile=b''
 		for truc in indexRecieve:
@@ -346,9 +339,6 @@ class Rcv:
 
 		writeTo(fichier)
 
-		# print("durée du transfer:",str(stopAt-startAt),"débit moyen de", str(os.stat("imgOut.txt")[5]/(stopAt-startAt)))
-
-		print("transfer  terminer")
 
 
 		print(str(indexRecieve))
