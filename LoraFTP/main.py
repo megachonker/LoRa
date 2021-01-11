@@ -116,19 +116,24 @@ def run():
 			print("Exeption Exit "+str(detaille))
 
 #Bande passante
+#[0]
 # 2 = LoRa.BW_500KHZ
 # 1 = LoRa.BW_250KHZ
 # 0 = LoRa.BW_125KHZ
-	#	Default  bandwidth  = 0
 
+#SF facteur d'étalement 12 débit faible
+#[7]
+#7-12
 
 #Codding rate, Code  redondance ciclique  rapport
+#[0]
 # 1 = LoRa.CODING_4_5
 # 2 = LoRa.CODING_4_6
 # 3 = LoRa.CODING_4_7
 # 4 = LoRa.CODING_4_8
 
 #Puissance d'émition en DBm
+#[14]
 # tx_power  2 - 20
 
 #preamble nombre signe de  syncro
